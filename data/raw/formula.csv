@@ -1,0 +1,146 @@
+formula_id,perfume_id,perfume_name,ingredient_id,ingredient_name,percentage,quantity_per_100ml,note_type,is_critical
+FOR-PRF-001,PRF-001,Burberry Eveniet,ING-018,Black Pepper,1.03,1.03,Base,False
+FOR-PRF-001,PRF-001,Burberry Eveniet,ING-002,Lemon Extract,18.19,18.19,Fixative,True
+FOR-PRF-001,PRF-001,Burberry Eveniet,ING-027,Violet Leaf,7.25,7.25,Top,True
+FOR-PRF-001,PRF-001,Burberry Eveniet,ING-001,Bergamot Oil,37.81,37.81,Fixative,False
+FOR-PRF-001,PRF-001,Burberry Eveniet,ING-005,Sandalwood,1.68,1.68,Heart,False
+FOR-PRF-001,PRF-001,Burberry Eveniet,ING-037,Thyme,5.58,5.58,Base,False
+FOR-PRF-001,PRF-001,Burberry Eveniet,ING-033,Ginger,28.47,28.47,Fixative,False
+FOR-PRF-002,PRF-002,YSL Est Aqua,ING-010,Patchouli,19.86,19.86,Base,False
+FOR-PRF-002,PRF-002,YSL Est Aqua,ING-007,White Musk,55.95,55.95,Base,False
+FOR-PRF-002,PRF-002,YSL Est Aqua,ING-006,Cedarwood,24.18,24.18,Base,True
+FOR-PRF-003,PRF-003,Burberry Totam Absolu,ING-031,Pink Pepper,12.17,12.17,Top,True
+FOR-PRF-003,PRF-003,Burberry Totam Absolu,ING-014,Orange Blossom,13.19,13.19,Top,True
+FOR-PRF-003,PRF-003,Burberry Totam Absolu,ING-023,Mandarin,18.33,18.33,Fixative,True
+FOR-PRF-003,PRF-003,Burberry Totam Absolu,ING-016,Cardamom,15.79,15.79,Base,True
+FOR-PRF-003,PRF-003,Burberry Totam Absolu,ING-015,Ylang Ylang,39.48,39.48,Top,False
+FOR-PRF-003,PRF-003,Burberry Totam Absolu,ING-034,Nutmeg,1.04,1.04,Top,False
+FOR-PRF-004,PRF-004,YSL Possimus,ING-038,Basil,40.46,40.46,Fixative,True
+FOR-PRF-004,PRF-004,YSL Possimus,ING-025,Tuberose,16.79,16.79,Base,False
+FOR-PRF-004,PRF-004,YSL Possimus,ING-002,Lemon Extract,26.11,26.11,Base,True
+FOR-PRF-004,PRF-004,YSL Possimus,ING-006,Cedarwood,0.03,0.03,Heart,True
+FOR-PRF-004,PRF-004,YSL Possimus,ING-016,Cardamom,16.61,16.61,Fixative,True
+FOR-PRF-005,PRF-005,Byredo Odit Oud,ING-029,Myrrh,32.54,32.54,Base,False
+FOR-PRF-005,PRF-005,Byredo Odit Oud,ING-014,Orange Blossom,43.27,43.27,Top,False
+FOR-PRF-005,PRF-005,Byredo Odit Oud,ING-032,Coriander,24.19,24.19,Heart,False
+FOR-PRF-006,PRF-006,Byredo Dolor Noir,ING-014,Orange Blossom,19.65,19.65,Top,False
+FOR-PRF-006,PRF-006,Byredo Dolor Noir,ING-029,Myrrh,26.15,26.15,Top,True
+FOR-PRF-006,PRF-006,Byredo Dolor Noir,ING-027,Violet Leaf,24.93,24.93,Base,False
+FOR-PRF-006,PRF-006,Byredo Dolor Noir,ING-039,Mint,10.03,10.03,Base,False
+FOR-PRF-006,PRF-006,Byredo Dolor Noir,ING-033,Ginger,3.9,3.9,Top,True
+FOR-PRF-006,PRF-006,Byredo Dolor Noir,ING-034,Nutmeg,12.04,12.04,Heart,False
+FOR-PRF-006,PRF-006,Byredo Dolor Noir,ING-008,Ambergris,3.29,3.29,Top,True
+FOR-PRF-007,PRF-007,Chanel Hic Noir,ING-034,Nutmeg,6.96,6.96,Top,True
+FOR-PRF-007,PRF-007,Chanel Hic Noir,ING-014,Orange Blossom,77.17,77.17,Fixative,False
+FOR-PRF-007,PRF-007,Chanel Hic Noir,ING-037,Thyme,15.88,15.88,Fixative,False
+FOR-PRF-008,PRF-008,Jo Malone Ex Oud,ING-021,Neroli,18.24,18.24,Base,False
+FOR-PRF-008,PRF-008,Jo Malone Ex Oud,ING-001,Bergamot Oil,29.13,29.13,Base,True
+FOR-PRF-008,PRF-008,Jo Malone Ex Oud,ING-014,Orange Blossom,6.9,6.9,Top,True
+FOR-PRF-008,PRF-008,Jo Malone Ex Oud,ING-008,Ambergris,45.73,45.73,Heart,True
+FOR-PRF-009,PRF-009,Le Labo Magnam Absolu,ING-021,Neroli,6.09,6.09,Base,False
+FOR-PRF-009,PRF-009,Le Labo Magnam Absolu,ING-036,Rosemary,39.54,39.54,Fixative,False
+FOR-PRF-009,PRF-009,Le Labo Magnam Absolu,ING-020,Frankincense,54.38,54.38,Fixative,False
+FOR-PRF-010,PRF-010,Tom Ford Consectetur Absolu,ING-002,Lemon Extract,38.6,38.6,Heart,True
+FOR-PRF-010,PRF-010,Tom Ford Consectetur Absolu,ING-029,Myrrh,2.71,2.71,Base,False
+FOR-PRF-010,PRF-010,Tom Ford Consectetur Absolu,ING-016,Cardamom,14.36,14.36,Top,False
+FOR-PRF-010,PRF-010,Tom Ford Consectetur Absolu,ING-005,Sandalwood,15.6,15.6,Fixative,False
+FOR-PRF-010,PRF-010,Tom Ford Consectetur Absolu,ING-036,Rosemary,28.73,28.73,Top,True
+FOR-PRF-011,PRF-011,Dior Architecto Noir,ING-011,Oud Wood,13.86,13.86,Top,True
+FOR-PRF-011,PRF-011,Dior Architecto Noir,ING-006,Cedarwood,34.94,34.94,Heart,False
+FOR-PRF-011,PRF-011,Dior Architecto Noir,ING-038,Basil,8.95,8.95,Heart,True
+FOR-PRF-011,PRF-011,Dior Architecto Noir,ING-034,Nutmeg,31.64,31.64,Base,False
+FOR-PRF-011,PRF-011,Dior Architecto Noir,ING-026,Geranium,0.67,0.67,Base,True
+FOR-PRF-011,PRF-011,Dior Architecto Noir,ING-023,Mandarin,9.94,9.94,Top,False
+FOR-PRF-012,PRF-012,YSL Quod Absolu,ING-004,Jasmine Essence,17.01,17.01,Heart,True
+FOR-PRF-012,PRF-012,YSL Quod Absolu,ING-018,Black Pepper,8.15,8.15,Fixative,True
+FOR-PRF-012,PRF-012,YSL Quod Absolu,ING-009,Vanilla Extract,19.19,19.19,Base,True
+FOR-PRF-012,PRF-012,YSL Quod Absolu,ING-020,Frankincense,2.41,2.41,Fixative,True
+FOR-PRF-012,PRF-012,YSL Quod Absolu,ING-012,Vetiver,40.37,40.37,Fixative,True
+FOR-PRF-012,PRF-012,YSL Quod Absolu,ING-021,Neroli,12.86,12.86,Fixative,True
+FOR-PRF-013,PRF-013,Hermès Saepe Absolu,ING-005,Sandalwood,0.18,0.18,Fixative,False
+FOR-PRF-013,PRF-013,Hermès Saepe Absolu,ING-026,Geranium,13.34,13.34,Fixative,False
+FOR-PRF-013,PRF-013,Hermès Saepe Absolu,ING-016,Cardamom,63.54,63.54,Top,False
+FOR-PRF-013,PRF-013,Hermès Saepe Absolu,ING-003,Rose Absolute,17.89,17.89,Top,False
+FOR-PRF-013,PRF-013,Hermès Saepe Absolu,ING-039,Mint,5.06,5.06,Heart,False
+FOR-PRF-014,PRF-014,Burberry Doloribus Absolu,ING-007,White Musk,69.57,69.57,Top,False
+FOR-PRF-014,PRF-014,Burberry Doloribus Absolu,ING-002,Lemon Extract,1.02,1.02,Top,True
+FOR-PRF-014,PRF-014,Burberry Doloribus Absolu,ING-014,Orange Blossom,6.37,6.37,Fixative,False
+FOR-PRF-014,PRF-014,Burberry Doloribus Absolu,ING-003,Rose Absolute,4.49,4.49,Top,False
+FOR-PRF-014,PRF-014,Burberry Doloribus Absolu,ING-020,Frankincense,18.54,18.54,Base,False
+FOR-PRF-015,PRF-015,Gucci Ex Flora,ING-023,Mandarin,41.26,41.26,Base,True
+FOR-PRF-015,PRF-015,Gucci Ex Flora,ING-010,Patchouli,4.25,4.25,Top,True
+FOR-PRF-015,PRF-015,Gucci Ex Flora,ING-025,Tuberose,2.1,2.1,Heart,False
+FOR-PRF-015,PRF-015,Gucci Ex Flora,ING-029,Myrrh,52.4,52.4,Base,True
+FOR-PRF-016,PRF-016,Hermès Debitis Flora,ING-026,Geranium,20.89,20.89,Top,True
+FOR-PRF-016,PRF-016,Hermès Debitis Flora,ING-016,Cardamom,14.75,14.75,Base,True
+FOR-PRF-016,PRF-016,Hermès Debitis Flora,ING-009,Vanilla Extract,15.28,15.28,Heart,True
+FOR-PRF-016,PRF-016,Hermès Debitis Flora,ING-031,Pink Pepper,49.08,49.08,Top,True
+FOR-PRF-017,PRF-017,YSL Magni Oud,ING-006,Cedarwood,11.64,11.64,Fixative,False
+FOR-PRF-017,PRF-017,YSL Magni Oud,ING-019,Tonka Bean,21.2,21.2,Base,False
+FOR-PRF-017,PRF-017,YSL Magni Oud,ING-020,Frankincense,3.24,3.24,Heart,False
+FOR-PRF-017,PRF-017,YSL Magni Oud,ING-017,Cinnamon,18.27,18.27,Top,False
+FOR-PRF-017,PRF-017,YSL Magni Oud,ING-031,Pink Pepper,13.66,13.66,Fixative,False
+FOR-PRF-017,PRF-017,YSL Magni Oud,ING-005,Sandalwood,31.99,31.99,Base,True
+FOR-PRF-018,PRF-018,Le Labo Sint Lumiere,ING-007,White Musk,2.3,2.3,Top,False
+FOR-PRF-018,PRF-018,Le Labo Sint Lumiere,ING-023,Mandarin,9.3,9.3,Fixative,False
+FOR-PRF-018,PRF-018,Le Labo Sint Lumiere,ING-039,Mint,47.65,47.65,Top,True
+FOR-PRF-018,PRF-018,Le Labo Sint Lumiere,ING-012,Vetiver,17.83,17.83,Base,False
+FOR-PRF-018,PRF-018,Le Labo Sint Lumiere,ING-038,Basil,22.91,22.91,Top,True
+FOR-PRF-019,PRF-019,Gucci Aliquam,ING-028,Oakmoss,15.12,15.12,Fixative,False
+FOR-PRF-019,PRF-019,Gucci Aliquam,ING-007,White Musk,11.26,11.26,Top,False
+FOR-PRF-019,PRF-019,Gucci Aliquam,ING-027,Violet Leaf,3.75,3.75,Heart,False
+FOR-PRF-019,PRF-019,Gucci Aliquam,ING-015,Ylang Ylang,10.25,10.25,Fixative,True
+FOR-PRF-019,PRF-019,Gucci Aliquam,ING-014,Orange Blossom,4.3,4.3,Top,False
+FOR-PRF-019,PRF-019,Gucci Aliquam,ING-020,Frankincense,26.13,26.13,Top,False
+FOR-PRF-019,PRF-019,Gucci Aliquam,ING-023,Mandarin,29.19,29.19,Top,True
+FOR-PRF-020,PRF-020,Le Labo Porro Noir,ING-029,Myrrh,6.32,6.32,Heart,False
+FOR-PRF-020,PRF-020,Le Labo Porro Noir,ING-026,Geranium,31.4,31.4,Fixative,True
+FOR-PRF-020,PRF-020,Le Labo Porro Noir,ING-034,Nutmeg,62.28,62.28,Base,False
+FOR-PRF-021,PRF-021,Jo Malone At,ING-012,Vetiver,28.06,28.06,Fixative,False
+FOR-PRF-021,PRF-021,Jo Malone At,ING-031,Pink Pepper,6.28,6.28,Base,True
+FOR-PRF-021,PRF-021,Jo Malone At,ING-006,Cedarwood,13.92,13.92,Base,True
+FOR-PRF-021,PRF-021,Jo Malone At,ING-011,Oud Wood,31.31,31.31,Base,True
+FOR-PRF-021,PRF-021,Jo Malone At,ING-008,Ambergris,20.43,20.43,Fixative,False
+FOR-PRF-022,PRF-022,Tom Ford Itaque Intense,ING-002,Lemon Extract,22.82,22.82,Heart,False
+FOR-PRF-022,PRF-022,Tom Ford Itaque Intense,ING-017,Cinnamon,26.15,26.15,Top,True
+FOR-PRF-022,PRF-022,Tom Ford Itaque Intense,ING-022,Grapefruit,7.65,7.65,Base,False
+FOR-PRF-022,PRF-022,Tom Ford Itaque Intense,ING-024,Iris,30.63,30.63,Fixative,True
+FOR-PRF-022,PRF-022,Tom Ford Itaque Intense,ING-006,Cedarwood,12.75,12.75,Top,False
+FOR-PRF-023,PRF-023,Jo Malone Sed Aqua,ING-014,Orange Blossom,1.06,1.06,Fixative,False
+FOR-PRF-023,PRF-023,Jo Malone Sed Aqua,ING-002,Lemon Extract,10.18,10.18,Heart,True
+FOR-PRF-023,PRF-023,Jo Malone Sed Aqua,ING-001,Bergamot Oil,16.0,16.0,Fixative,False
+FOR-PRF-023,PRF-023,Jo Malone Sed Aqua,ING-035,Clove,2.37,2.37,Top,False
+FOR-PRF-023,PRF-023,Jo Malone Sed Aqua,ING-018,Black Pepper,19.65,19.65,Base,True
+FOR-PRF-023,PRF-023,Jo Malone Sed Aqua,ING-017,Cinnamon,11.35,11.35,Heart,False
+FOR-PRF-023,PRF-023,Jo Malone Sed Aqua,ING-025,Tuberose,39.39,39.39,Fixative,True
+FOR-PRF-024,PRF-024,Burberry Quod Flora,ING-018,Black Pepper,68.64,68.64,Heart,True
+FOR-PRF-024,PRF-024,Burberry Quod Flora,ING-012,Vetiver,16.01,16.01,Top,False
+FOR-PRF-024,PRF-024,Burberry Quod Flora,ING-026,Geranium,11.18,11.18,Top,True
+FOR-PRF-024,PRF-024,Burberry Quod Flora,ING-035,Clove,4.16,4.16,Base,True
+FOR-PRF-025,PRF-025,Dior Odit,ING-020,Frankincense,14.75,14.75,Fixative,True
+FOR-PRF-025,PRF-025,Dior Odit,ING-021,Neroli,6.06,6.06,Heart,True
+FOR-PRF-025,PRF-025,Dior Odit,ING-031,Pink Pepper,0.64,0.64,Heart,False
+FOR-PRF-025,PRF-025,Dior Odit,ING-012,Vetiver,3.27,3.27,Top,False
+FOR-PRF-025,PRF-025,Dior Odit,ING-030,Benzoin,23.83,23.83,Base,True
+FOR-PRF-025,PRF-025,Dior Odit,ING-037,Thyme,16.55,16.55,Fixative,False
+FOR-PRF-025,PRF-025,Dior Odit,ING-007,White Musk,34.91,34.91,Fixative,True
+FOR-PRF-026,PRF-026,Le Labo Vel Noir,ING-024,Iris,1.77,1.77,Heart,False
+FOR-PRF-026,PRF-026,Le Labo Vel Noir,ING-032,Coriander,5.38,5.38,Fixative,True
+FOR-PRF-026,PRF-026,Le Labo Vel Noir,ING-031,Pink Pepper,5.34,5.34,Base,False
+FOR-PRF-026,PRF-026,Le Labo Vel Noir,ING-035,Clove,9.34,9.34,Fixative,False
+FOR-PRF-026,PRF-026,Le Labo Vel Noir,ING-003,Rose Absolute,64.93,64.93,Fixative,False
+FOR-PRF-026,PRF-026,Le Labo Vel Noir,ING-010,Patchouli,1.15,1.15,Heart,True
+FOR-PRF-026,PRF-026,Le Labo Vel Noir,ING-038,Basil,12.08,12.08,Heart,False
+FOR-PRF-027,PRF-027,Chanel Consectetur,ING-001,Bergamot Oil,8.46,8.46,Fixative,False
+FOR-PRF-027,PRF-027,Chanel Consectetur,ING-032,Coriander,0.41,0.41,Top,True
+FOR-PRF-027,PRF-027,Chanel Consectetur,ING-035,Clove,91.13,91.13,Base,True
+FOR-PRF-028,PRF-028,Jo Malone Quos Aqua,ING-034,Nutmeg,39.91,39.91,Base,False
+FOR-PRF-028,PRF-028,Jo Malone Quos Aqua,ING-011,Oud Wood,7.17,7.17,Heart,False
+FOR-PRF-028,PRF-028,Jo Malone Quos Aqua,ING-024,Iris,32.46,32.46,Top,True
+FOR-PRF-028,PRF-028,Jo Malone Quos Aqua,ING-005,Sandalwood,20.46,20.46,Fixative,False
+FOR-PRF-029,PRF-029,Jo Malone Cupiditate Absolu,ING-039,Mint,26.43,26.43,Fixative,True
+FOR-PRF-029,PRF-029,Jo Malone Cupiditate Absolu,ING-038,Basil,2.0,2.0,Fixative,False
+FOR-PRF-029,PRF-029,Jo Malone Cupiditate Absolu,ING-014,Orange Blossom,71.57,71.57,Heart,False
+FOR-PRF-030,PRF-030,Burberry Sapiente Noir,ING-004,Jasmine Essence,51.69,51.69,Base,True
+FOR-PRF-030,PRF-030,Burberry Sapiente Noir,ING-029,Myrrh,23.59,23.59,Top,False
+FOR-PRF-030,PRF-030,Burberry Sapiente Noir,ING-025,Tuberose,24.71,24.71,Top,False

@@ -1,0 +1,81 @@
+supplier_id,supplier_name,country,ingredient_id,ingredient_name,price_per_unit_idr,min_order_quantity,lead_time_days,reliability_score,payment_terms,contact_email,last_transaction_date
+SUP-001,CV Pratama Tbk,Bosnia dan Herzegovina,ING-020,Frankincense,61111,50,10,6.0,Prepaid,wibowodagel@ud.org,2026-04-29
+SUP-002,Perum Maheswara Waluyo (Persero) Tbk,Rusia,ING-023,Mandarin,307330,100,11,7.3,Net 30,restu95@pt.id,2026-05-16
+SUP-003,PT Pradipta (Persero) Tbk,Luksemburg,ING-019,Tonka Bean,458331,50,4,8.3,Net 30,umaya52@ud.net,2026-03-13
+SUP-004,Perum Prasasta Marpaung,Nepal,ING-025,Tuberose,319463,100,8,7.0,Prepaid,osaputra@ud.org,2026-05-28
+SUP-005,PD Santoso (Persero) Tbk,Guatemala,ING-015,Ylang Ylang,112458,500,4,5.8,Net 30,irwan76@cv.ponpes.id,2026-02-14
+SUP-006,Perum Aryani Tbk,Lesotho,ING-029,Myrrh,458543,200,28,8.9,COD,entengmelani@pt.gov,2026-05-23
+SUP-007,Perum Haryanto Winarno Tbk,Seychelles,ING-022,Grapefruit,305298,500,7,5.9,Net 60,qnuraini@pt.ponpes.id,2026-05-07
+SUP-008,UD Kusumo Tbk,Monako,ING-037,Thyme,159122,50,26,6.6,Net 30,umayaadriansyah@perum.biz.id,2026-06-11
+SUP-009,CV Wahyudin Marpaung,Republik Kongo,ING-018,Black Pepper,149882,100,4,9.8,Net 30,rahimahmarsudi@pt.id,2025-08-11
+SUP-010,Perum Hutapea Hutasoit,Venezuela,ING-005,Sandalwood,209858,50,22,5.3,Net 60,whidayat@cv.ponpes.id,2025-09-22
+SUP-011,Perum Sudiati Tbk,Guatemala,ING-018,Black Pepper,139418,100,21,8.0,Net 30,leowacana@pd.int,2025-10-24
+SUP-012,PT Sirait Damanik,Senegal,ING-028,Oakmoss,37739,200,11,6.0,COD,lintangprasetya@pt.org,2025-10-16
+SUP-013,PT Sitompul,Barbados,ING-007,White Musk,378785,500,7,8.4,COD,kalimwinarsih@cv.id,2026-05-20
+SUP-014,PD Nainggolan Kuswoyo (Persero) Tbk,Tajikistan,ING-020,Frankincense,55041,50,3,7.3,Net 30,bthamrin@pd.org,2025-12-23
+SUP-015,PT Prayoga (Persero) Tbk,Finlandia,ING-001,Bergamot Oil,102833,100,19,6.3,COD,bmandala@ud.net,2026-01-08
+SUP-016,PT Yulianti,Republik Kongo,ING-021,Neroli,478223,100,14,6.4,Prepaid,iswahyudijasmani@pd.mil,2026-06-20
+SUP-017,PT Marbun Wibowo (Persero) Tbk,Makedonia Utara,ING-027,Violet Leaf,294709,200,22,9.9,Net 30,upik46@cv.org,2026-03-01
+SUP-018,UD Hakim,Australia,ING-010,Patchouli,477013,200,24,5.5,Net 60,hmardhiyah@pt.gov,2025-08-15
+SUP-019,CV Waskita,Brunei,ING-004,Jasmine Essence,281699,50,26,7.8,COD,kiandrariyanti@perum.mil.id,2026-04-01
+SUP-020,UD Putra Tbk,Hongaria,ING-023,Mandarin,327660,100,25,6.7,COD,prima24@ud.web.id,2026-02-23
+SUP-021,PT Nasyiah,Guatemala,ING-028,Oakmoss,39084,200,30,5.3,Prepaid,eman51@ud.my.id,2026-06-08
+SUP-022,Perum Yolanda (Persero) Tbk,Tanzania,ING-020,Frankincense,63377,50,3,6.7,Net 60,tari12@pt.ac.id,2025-11-06
+SUP-023,UD Putra Usada,Israel,ING-016,Cardamom,45358,200,8,8.7,Prepaid,dramadan@pd.org,2025-07-21
+SUP-024,CV Uyainah Tbk,El Salvador,ING-013,Lavender,289894,50,5,9.7,Net 60,tpuspasari@perum.edu,2026-02-16
+SUP-025,UD Padmasari,Rusia,ING-034,Nutmeg,316671,200,21,7.8,Prepaid,satyamahendra@ud.org,2026-07-04
+SUP-026,CV Zulaika (Persero) Tbk,Tanzania,ING-025,Tuberose,228913,200,14,9.5,Net 30,thamrinira@perum.gov,2026-06-27
+SUP-027,PT Nugroho Sitorus Tbk,Thailand,ING-009,Vanilla Extract,429040,100,24,6.2,Net 30,kasusramanullang@pd.net.id,2025-10-14
+SUP-028,PD Tampubolon Samosir,Guyana,ING-007,White Musk,398242,500,22,8.7,Net 60,asirwadawahyuni@pd.net,2026-05-16
+SUP-029,UD Yuniar Tbk,Togo,ING-019,Tonka Bean,537400,100,16,5.1,COD,asman14@perum.int,2026-03-08
+SUP-030,UD Sihotang Fujiati (Persero) Tbk,Madagaskar,ING-014,Orange Blossom,537557,500,28,8.3,Net 60,kacunggunawan@pt.desa.id,2026-01-03
+SUP-031,UD Oktaviani,Kiribati,ING-004,Jasmine Essence,281990,50,15,9.4,Prepaid,salahudincinthia@pd.biz.id,2026-02-20
+SUP-032,CV Andriani Widiastuti,Luksemburg,ING-009,Vanilla Extract,328920,500,14,6.5,Net 60,patriciapurnawati@pd.biz.id,2025-11-08
+SUP-033,PD Prastuti Sudiati,Swiss,ING-017,Cinnamon,306763,100,15,6.6,Net 30,wadi77@perum.net,2025-11-07
+SUP-034,PT Prakasa Tbk,Guinea-Bissau,ING-021,Neroli,492503,200,14,8.2,Prepaid,emildongoran@cv.web.id,2026-06-15
+SUP-035,PD Agustina,Sudan,ING-035,Clove,47159,200,3,5.6,COD,zamirawinarno@pd.int,2026-05-18
+SUP-036,CV Nugroho Maryati Tbk,Australia,ING-013,Lavender,246613,200,4,5.5,Prepaid,dimazhasanah@pd.ponpes.id,2026-03-08
+SUP-037,PD Suryatmi Tbk,Rumania,ING-030,Benzoin,325581,200,16,8.0,Net 30,vmanullang@pd.or.id,2026-01-24
+SUP-038,UD Farida Hutagalung,Uni Emirat Arab,ING-034,Nutmeg,296718,100,11,5.2,Prepaid,jarwadi45@perum.edu,2025-10-17
+SUP-039,CV Prabowo Haryanto Tbk,Malta,ING-024,Iris,128108,100,14,7.2,COD,halima76@cv.go.id,2026-07-06
+SUP-040,Perum Wibowo,Norwegia,ING-012,Vetiver,370389,50,26,9.5,COD,thamrinlembah@pd.net.id,2025-10-13
+SUP-041,PD Laksita (Persero) Tbk,Makedonia Utara,ING-016,Cardamom,45870,200,15,8.5,Net 60,uli62@cv.go.id,2026-03-06
+SUP-042,PT Yuniar,Mesir,ING-012,Vetiver,309487,500,24,8.7,Net 60,virmannajmudin@ud.co.id,2025-10-10
+SUP-043,UD Sirait Wibowo Tbk,Zambia,ING-001,Bergamot Oil,129729,200,15,7.7,Net 30,framadan@pt.id,2026-03-29
+SUP-044,PT Dabukke,Indonesia,ING-009,Vanilla Extract,340973,100,16,8.9,COD,artaoktaviani@cv.int,2026-02-24
+SUP-045,PD Rajasa Uwais,Eritrea,ING-008,Ambergris,49299,500,24,6.1,Prepaid,marpaungluthfi@perum.biz.id,2026-02-28
+SUP-046,PD Napitupulu Hutagalung (Persero) Tbk,Bosnia dan Herzegovina,ING-030,Benzoin,387770,100,24,5.4,COD,yani91@ud.mil.id,2026-04-02
+SUP-047,PT Mayasari Tbk,Albania,ING-026,Geranium,73687,100,24,6.6,Net 60,glestari@ud.mil.id,2025-09-26
+SUP-048,Perum Nasyiah Tbk,Niger,ING-021,Neroli,356460,50,10,9.9,Net 30,rrahayu@cv.my.id,2025-10-22
+SUP-049,Perum Suryatmi Winarsih Tbk,Kroasia,ING-023,Mandarin,352597,100,25,8.5,Prepaid,lailasarimartaka@pd.ac.id,2025-11-29
+SUP-050,Perum Saefullah (Persero) Tbk,Polandia,ING-024,Iris,153577,100,23,8.4,Net 30,cawisonopermadi@pd.net.id,2026-01-10
+SUP-051,PT Sihombing,Guinea Khatulistiwa,ING-035,Clove,48900,100,8,9.0,Prepaid,tprasasta@pd.mil.id,2026-05-05
+SUP-052,UD Hasanah Tbk,Kepulauan Solomon,ING-022,Grapefruit,258327,100,30,5.6,Net 60,jail13@pt.mil,2025-10-12
+SUP-053,UD Rahmawati Novitasari Tbk,Bolivia,ING-026,Geranium,98609,200,27,9.5,Prepaid,legapradana@cv.ponpes.id,2025-09-07
+SUP-054,PT Habibi Tbk,Turkmenistan,ING-024,Iris,181156,500,8,8.7,Prepaid,sarahlestari@pt.biz.id,2026-01-18
+SUP-055,PD Siregar Nashiruddin (Persero) Tbk,Irak,ING-027,Violet Leaf,254807,100,29,8.2,Prepaid,elatupono@pd.edu,2025-09-15
+SUP-056,PT Prayoga (Persero) Tbk,Rwanda,ING-005,Sandalwood,193328,200,17,5.4,COD,msudiati@perum.my.id,2025-11-12
+SUP-057,UD Purnawati Safitri (Persero) Tbk,Slovenia,ING-014,Orange Blossom,431704,200,13,9.5,Net 30,pranowoqueen@ud.gov,2025-10-21
+SUP-058,Perum Hutagalung Manullang,Afganistan,ING-012,Vetiver,301938,100,15,8.5,Net 60,shartati@ud.biz.id,2026-04-19
+SUP-059,PT Pradipta Saptono (Persero) Tbk,Meksiko,ING-029,Myrrh,317065,500,13,7.7,Prepaid,palastriihsan@ud.org,2025-09-22
+SUP-060,Perum Purnawati Tbk,Mongolia,ING-027,Violet Leaf,214475,500,15,9.5,Net 30,hastutiyunita@pd.my.id,2025-08-20
+SUP-061,PD Sinaga,Singapura,ING-013,Lavender,323382,500,18,5.0,COD,aslijan13@ud.org,2026-05-12
+SUP-062,PD Maryati Yulianti,Montenegro,ING-015,Ylang Ylang,116769,500,30,9.5,Prepaid,gilang96@pt.co.id,2025-11-21
+SUP-063,CV Sitompul,Maroko,ING-013,Lavender,287326,100,18,6.1,Prepaid,qsuwarno@perum.co.id,2025-10-26
+SUP-064,PT Waskita (Persero) Tbk,Tajikistan,ING-032,Coriander,212770,500,13,8.3,Prepaid,dzulkarnain@perum.net.id,2026-03-19
+SUP-065,PT Putra Santoso (Persero) Tbk,Kamerun,ING-038,Basil,64290,500,7,9.9,Net 30,hlaksita@perum.gov,2025-11-17
+SUP-066,Perum Wasita,Benin,ING-027,Violet Leaf,302320,50,5,8.2,Net 60,darsirahhariyah@cv.biz.id,2026-02-02
+SUP-067,PD Laksmiwati Tbk,India,ING-027,Violet Leaf,298152,100,4,6.3,COD,jpuspasari@cv.net,2025-11-04
+SUP-068,UD Mayasari Santoso (Persero) Tbk,Kamboja,ING-019,Tonka Bean,414907,200,13,8.8,Prepaid,lili97@pd.desa.id,2025-11-26
+SUP-069,PD Sinaga Nainggolan (Persero) Tbk,Samoa,ING-009,Vanilla Extract,337181,500,11,9.2,Prepaid,xpradipta@pt.go.id,2026-04-03
+SUP-070,PD Firgantoro Mahendra,Papua Nugini,ING-028,Oakmoss,31502,50,14,6.1,Net 30,daliono71@pt.net,2026-01-18
+SUP-071,UD Oktaviani Tbk,Swedia,ING-028,Oakmoss,43387,50,27,5.2,Net 60,sitompulvivi@ud.web.id,2025-08-15
+SUP-072,UD Pradana Iswahyudi,Monako,ING-025,Tuberose,236651,50,22,5.8,Net 60,usadadaliono@cv.co.id,2026-05-25
+SUP-073,UD Tamba,Liechtenstein,ING-019,Tonka Bean,464040,50,21,9.7,Prepaid,pmaulana@perum.gov,2025-08-19
+SUP-074,Perum Zulaika Permadi Tbk,Selandia Baru,ING-009,Vanilla Extract,399520,200,8,8.0,Net 30,jaimanhariyah@pd.my.id,2026-07-04
+SUP-075,Perum Manullang (Persero) Tbk,Montenegro,ING-016,Cardamom,47778,100,12,5.5,Net 30,lili46@pd.go.id,2026-06-16
+SUP-076,PT Prakasa Wibowo Tbk,San Marino,ING-037,Thyme,156988,500,15,9.7,Net 60,lantar06@pt.web.id,2026-05-05
+SUP-077,UD Pradana Sudiati Tbk,Guinea Khatulistiwa,ING-026,Geranium,73075,100,6,8.5,COD,pusparamadan@pt.org,2025-11-16
+SUP-078,PT Prastuti Utama (Persero) Tbk,Benin,ING-007,White Musk,482269,50,28,9.9,Net 30,martani62@cv.or.id,2026-01-30
+SUP-079,CV Rajasa Tbk,Kazakhstan,ING-018,Black Pepper,136137,500,24,6.9,COD,dartono71@cv.go.id,2026-06-13
+SUP-080,PT Widodo (Persero) Tbk,Israel,ING-010,Patchouli,359862,500,29,7.5,Prepaid,hasanahokto@perum.int,2026-04-08

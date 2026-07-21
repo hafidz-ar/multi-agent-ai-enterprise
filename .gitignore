@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+.env
+
+# Databases
+*.db
+*.sqlite3
+data/database/*.db
+data/vectorstore/chroma_db/
+
+# Logs
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp

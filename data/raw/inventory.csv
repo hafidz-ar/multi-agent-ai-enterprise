@@ -1,0 +1,61 @@
+stock_id,perfume_id,perfume_name,size_ml,quantity_available,reorder_point,status,last_updated,warehouse_location
+STK-PRF-001-50,PRF-001,Burberry Eveniet,50,131,81,Available,2026-07-20,Gudang Surabaya
+STK-PRF-001-100,PRF-001,Burberry Eveniet,100,382,63,Available,2026-07-20,Gudang Jakarta
+STK-PRF-002-50,PRF-002,YSL Est Aqua,50,239,29,Available,2026-07-20,Gudang Jakarta
+STK-PRF-002-100,PRF-002,YSL Est Aqua,100,386,48,Available,2026-07-20,Gudang Bandung
+STK-PRF-003-50,PRF-003,Burberry Totam Absolu,50,370,70,Available,2026-07-20,Gudang Bandung
+STK-PRF-003-100,PRF-003,Burberry Totam Absolu,100,187,31,Available,2026-07-20,Gudang Surabaya
+STK-PRF-004-50,PRF-004,YSL Possimus,50,7,53,Low Stock,2026-07-20,Gudang Bandung
+STK-PRF-004-100,PRF-004,YSL Possimus,100,63,78,Low Stock,2026-07-20,Gudang Surabaya
+STK-PRF-005-50,PRF-005,Byredo Odit Oud,50,344,53,Available,2026-07-20,Gudang Bandung
+STK-PRF-005-100,PRF-005,Byredo Odit Oud,100,195,67,Available,2026-07-20,Gudang Jakarta
+STK-PRF-006-50,PRF-006,Byredo Dolor Noir,50,345,49,Available,2026-07-20,Gudang Surabaya
+STK-PRF-006-100,PRF-006,Byredo Dolor Noir,100,12,99,Low Stock,2026-07-20,Gudang Bandung
+STK-PRF-007-50,PRF-007,Chanel Hic Noir,50,167,98,Available,2026-07-20,Gudang Jakarta
+STK-PRF-007-100,PRF-007,Chanel Hic Noir,100,331,28,Available,2026-07-20,Gudang Bandung
+STK-PRF-008-50,PRF-008,Jo Malone Ex Oud,50,421,79,Available,2026-07-20,Gudang Bandung
+STK-PRF-008-100,PRF-008,Jo Malone Ex Oud,100,154,72,Available,2026-07-20,Gudang Jakarta
+STK-PRF-009-50,PRF-009,Le Labo Magnam Absolu,50,71,25,Available,2026-07-20,Gudang Jakarta
+STK-PRF-009-100,PRF-009,Le Labo Magnam Absolu,100,155,83,Available,2026-07-20,Gudang Jakarta
+STK-PRF-010-50,PRF-010,Tom Ford Consectetur Absolu,50,49,50,Low Stock,2026-07-20,Gudang Bandung
+STK-PRF-010-100,PRF-010,Tom Ford Consectetur Absolu,100,69,69,Low Stock,2026-07-20,Gudang Surabaya
+STK-PRF-011-50,PRF-011,Dior Architecto Noir,50,189,89,Available,2026-07-20,Gudang Surabaya
+STK-PRF-011-100,PRF-011,Dior Architecto Noir,100,300,39,Available,2026-07-20,Gudang Surabaya
+STK-PRF-012-50,PRF-012,YSL Quod Absolu,50,335,32,Available,2026-07-20,Gudang Surabaya
+STK-PRF-012-100,PRF-012,YSL Quod Absolu,100,315,72,Available,2026-07-20,Gudang Surabaya
+STK-PRF-013-50,PRF-013,Hermès Saepe Absolu,50,16,67,Low Stock,2026-07-20,Gudang Jakarta
+STK-PRF-013-100,PRF-013,Hermès Saepe Absolu,100,227,76,Available,2026-07-20,Gudang Jakarta
+STK-PRF-014-50,PRF-014,Burberry Doloribus Absolu,50,437,66,Available,2026-07-20,Gudang Jakarta
+STK-PRF-014-100,PRF-014,Burberry Doloribus Absolu,100,351,67,Available,2026-07-20,Gudang Bandung
+STK-PRF-015-50,PRF-015,Gucci Ex Flora,50,461,65,Available,2026-07-20,Gudang Jakarta
+STK-PRF-015-100,PRF-015,Gucci Ex Flora,100,203,55,Available,2026-07-20,Gudang Jakarta
+STK-PRF-016-50,PRF-016,Hermès Debitis Flora,50,495,35,Available,2026-07-20,Gudang Surabaya
+STK-PRF-016-100,PRF-016,Hermès Debitis Flora,100,46,47,Low Stock,2026-07-20,Gudang Bandung
+STK-PRF-017-50,PRF-017,YSL Magni Oud,50,327,96,Available,2026-07-20,Gudang Jakarta
+STK-PRF-017-100,PRF-017,YSL Magni Oud,100,25,62,Low Stock,2026-07-20,Gudang Jakarta
+STK-PRF-018-50,PRF-018,Le Labo Sint Lumiere,50,64,92,Low Stock,2026-07-20,Gudang Jakarta
+STK-PRF-018-100,PRF-018,Le Labo Sint Lumiere,100,35,90,Low Stock,2026-07-20,Gudang Jakarta
+STK-PRF-019-50,PRF-019,Gucci Aliquam,50,300,47,Available,2026-07-20,Gudang Jakarta
+STK-PRF-019-100,PRF-019,Gucci Aliquam,100,168,38,Available,2026-07-20,Gudang Bandung
+STK-PRF-020-50,PRF-020,Le Labo Porro Noir,50,1,55,Low Stock,2026-07-20,Gudang Jakarta
+STK-PRF-020-100,PRF-020,Le Labo Porro Noir,100,66,89,Low Stock,2026-07-20,Gudang Surabaya
+STK-PRF-021-50,PRF-021,Jo Malone At,50,408,42,Available,2026-07-20,Gudang Jakarta
+STK-PRF-021-100,PRF-021,Jo Malone At,100,338,23,Available,2026-07-20,Gudang Jakarta
+STK-PRF-022-50,PRF-022,Tom Ford Itaque Intense,50,7,65,Low Stock,2026-07-20,Gudang Jakarta
+STK-PRF-022-100,PRF-022,Tom Ford Itaque Intense,100,301,61,Available,2026-07-20,Gudang Jakarta
+STK-PRF-023-50,PRF-023,Jo Malone Sed Aqua,50,89,53,Available,2026-07-20,Gudang Jakarta
+STK-PRF-023-100,PRF-023,Jo Malone Sed Aqua,100,64,73,Low Stock,2026-07-20,Gudang Bandung
+STK-PRF-024-50,PRF-024,Burberry Quod Flora,50,58,28,Available,2026-07-20,Gudang Surabaya
+STK-PRF-024-100,PRF-024,Burberry Quod Flora,100,229,66,Available,2026-07-20,Gudang Bandung
+STK-PRF-025-50,PRF-025,Dior Odit,50,303,33,Available,2026-07-20,Gudang Surabaya
+STK-PRF-025-100,PRF-025,Dior Odit,100,257,48,Available,2026-07-20,Gudang Bandung
+STK-PRF-026-50,PRF-026,Le Labo Vel Noir,50,22,86,Low Stock,2026-07-20,Gudang Surabaya
+STK-PRF-026-100,PRF-026,Le Labo Vel Noir,100,234,23,Available,2026-07-20,Gudang Jakarta
+STK-PRF-027-50,PRF-027,Chanel Consectetur,50,245,71,Available,2026-07-20,Gudang Surabaya
+STK-PRF-027-100,PRF-027,Chanel Consectetur,100,351,33,Available,2026-07-20,Gudang Surabaya
+STK-PRF-028-50,PRF-028,Jo Malone Quos Aqua,50,364,76,Available,2026-07-20,Gudang Jakarta
+STK-PRF-028-100,PRF-028,Jo Malone Quos Aqua,100,460,30,Available,2026-07-20,Gudang Surabaya
+STK-PRF-029-50,PRF-029,Jo Malone Cupiditate Absolu,50,311,38,Available,2026-07-20,Gudang Jakarta
+STK-PRF-029-100,PRF-029,Jo Malone Cupiditate Absolu,100,64,55,Available,2026-07-20,Gudang Bandung
+STK-PRF-030-50,PRF-030,Burberry Sapiente Noir,50,324,94,Available,2026-07-20,Gudang Bandung
+STK-PRF-030-100,PRF-030,Burberry Sapiente Noir,100,364,61,Available,2026-07-20,Gudang Surabaya

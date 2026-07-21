@@ -1,0 +1,41 @@
+ingredient_id,ingredient_name,category,unit,stock_available,reorder_point,cost_per_unit_idr,origin_country,status
+ING-001,Bergamot Oil,Resin,ml,3377.42,110.0,124000,Suriah,Available
+ING-002,Lemon Extract,Floral,gram,1127.92,141.0,26000,Brasil,Available
+ING-003,Rose Absolute,Citrus,ml,634.09,187.46,376000,Andorra,Available
+ING-004,Jasmine Essence,Musk,gram,3424.48,317.98,311000,Yaman,Available
+ING-005,Sandalwood,Woody,gram,1751.86,447.72,184000,Jepang,Available
+ING-006,Cedarwood,Spice,ml,1750.42,186.13,57000,India,Available
+ING-007,White Musk,Spice,gram,2209.67,243.59,423000,Guinea-Bissau,Available
+ING-008,Ambergris,Floral,gram,695.53,283.77,50000,Chad,Available
+ING-009,Vanilla Extract,Spice,ml,2984.18,431.76,370000,Vietnam,Available
+ING-010,Patchouli,Resin,ml,813.0,364.51,447000,Bosnia dan Herzegovina,Available
+ING-011,Oud Wood,Resin,gram,1547.56,140.4,335000,Togo,Available
+ING-012,Vetiver,Spice,ml,4253.5,165.06,353000,Yaman,Available
+ING-013,Lavender,Floral,ml,1701.4,474.66,283000,Republik Rakyat Tiongkok,Available
+ING-014,Orange Blossom,Fruity,gram,3781.07,165.36,483000,Belize,Available
+ING-015,Ylang Ylang,Spice,ml,3380.0,322.78,127000,Serbia,Available
+ING-016,Cardamom,Fruity,gram,4198.11,422.02,43000,Meksiko,Available
+ING-017,Cinnamon,Spice,ml,1449.42,477.16,345000,Antigua dan Barbuda,Available
+ING-018,Black Pepper,Herbal,ml,2746.54,453.87,145000,Angola,Available
+ING-019,Tonka Bean,Resin,gram,1128.34,398.0,469000,Benin,Available
+ING-020,Frankincense,Woody,gram,3125.9,244.8,56000,Guinea,Available
+ING-021,Neroli,Woody,ml,3901.02,444.44,415000,Haiti,Available
+ING-022,Grapefruit,Fruity,gram,3562.17,338.56,315000,Paraguay,Available
+ING-023,Mandarin,Citrus,ml,4982.55,311.65,359000,Singapura,Available
+ING-024,Iris,Spice,ml,4481.55,400.35,160000,Andorra,Available
+ING-025,Tuberose,Resin,ml,2456.44,281.49,269000,Saint Kitts dan Nevis,Available
+ING-026,Geranium,Resin,ml,4606.83,448.21,88000,Gambia,Available
+ING-027,Violet Leaf,Citrus,gram,2182.61,164.62,260000,Uruguay,Available
+ING-028,Oakmoss,Resin,ml,587.65,471.64,39000,Swedia,Available
+ING-029,Myrrh,Floral,ml,1583.92,326.94,384000,Tuvalu,Available
+ING-030,Benzoin,Woody,ml,2686.96,127.69,347000,Republik Rakyat Tiongkok,Available
+ING-031,Pink Pepper,Resin,gram,2638.77,319.92,118000,Mauritius,Available
+ING-032,Coriander,Musk,gram,4680.11,402.11,214000,Guinea Khatulistiwa,Available
+ING-033,Ginger,Herbal,gram,4978.17,359.95,71000,Mozambik,Available
+ING-034,Nutmeg,Citrus,ml,1615.58,125.61,311000,Senegal,Available
+ING-035,Clove,Citrus,ml,1490.98,128.4,44000,Jerman,Available
+ING-036,Rosemary,Floral,ml,4574.39,443.85,152000,Afrika Selatan,Available
+ING-037,Thyme,Woody,gram,3510.4,185.69,134000,Ekuador,Available
+ING-038,Basil,Musk,ml,4030.79,423.0,59000,Turkmenistan,Available
+ING-039,Mint,Fruity,gram,3465.42,241.72,452000,Meksiko,Available
+ING-040,Sage,Floral,ml,3780.84,369.35,216000,Kuba,Available

@@ -1,0 +1,16 @@
+pandas
+faker
+numpy
+langchain>=0.3
+langgraph>=0.2
+langchain-community>=0.3
+langchain-google-genai
+langchain-groq>=0.1.0
+sentence-transformers
+chromadb
+python-dotenv
+pydantic
+fastapi
+uvicorn
+python-multipart
+sqlalchemy

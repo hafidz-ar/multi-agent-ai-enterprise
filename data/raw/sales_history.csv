@@ -1,0 +1,101 @@
+transaction_id,date,perfume_id,perfume_name,category,size_ml,quantity_sold,unit_price_idr,total_revenue_idr,channel,region,customer_segment,campaign_id,return_flag
+TRX-000066,2024-01-05,PRF-020,Le Labo Porro Noir,Aquatic,100,1,4032000,4032000,Offline,Bali,Corporate,,False
+TRX-000096,2024-01-08,PRF-021,Jo Malone At,Aquatic,100,3,7920000,23760000,Online,Surabaya,Corporate,,False
+TRX-000002,2024-01-10,PRF-016,Hermès Debitis Flora,Fresh,50,1,950000,950000,Offline,Surabaya,Regular,,False
+TRX-000084,2024-01-12,PRF-017,YSL Magni Oud,Floral,50,1,4390000,4390000,Offline,Medan,Corporate,,False
+TRX-000001,2024-01-20,PRF-026,Le Labo Vel Noir,Oriental,50,2,3620000,7240000,Offline,Medan,Corporate,,False
+TRX-000016,2024-01-22,PRF-021,Jo Malone At,Aquatic,100,4,7920000,31680000,Wholesale,Bandung,Corporate,,False
+TRX-000044,2024-01-24,PRF-017,YSL Magni Oud,Floral,100,3,7902000,23706000,Offline,Jakarta,Corporate,CMP-009,False
+TRX-000034,2024-01-24,PRF-002,YSL Est Aqua,Oriental,50,1,4340000,4340000,Wholesale,Bali,VIP,,False
+TRX-000062,2024-01-27,PRF-020,Le Labo Porro Noir,Aquatic,50,2,2240000,4480000,Online,Medan,VIP,CMP-008,False
+TRX-000072,2024-02-01,PRF-018,Le Labo Sint Lumiere,Floral,100,2,5976000,11952000,Wholesale,Jakarta,VIP,CMP-005,False
+TRX-000046,2024-02-19,PRF-017,YSL Magni Oud,Floral,50,2,4390000,8780000,Offline,Bandung,VIP,,False
+TRX-000099,2024-02-20,PRF-008,Jo Malone Ex Oud,Oriental,100,4,8838000,35352000,Wholesale,Medan,VIP,,False
+TRX-000004,2024-02-26,PRF-024,Burberry Quod Flora,Aquatic,100,1,1224000,1224000,Offline,Bali,Corporate,,False
+TRX-000021,2024-02-28,PRF-006,Byredo Dolor Noir,Gourmand,100,2,3438000,6876000,Online,Surabaya,VIP,,False
+TRX-000083,2024-03-01,PRF-013,Hermès Saepe Absolu,Fresh,50,3,4020000,12060000,Online,Bali,VIP,CMP-009,False
+TRX-000023,2024-03-03,PRF-009,Le Labo Magnam Absolu,Oriental,100,2,6030000,12060000,Online,Jakarta,VIP,,False
+TRX-000038,2024-03-07,PRF-022,Tom Ford Itaque Intense,Gourmand,100,4,4446000,17784000,Offline,Bali,Corporate,,False
+TRX-000088,2024-03-12,PRF-026,Le Labo Vel Noir,Oriental,50,1,3620000,3620000,Wholesale,Bandung,Regular,,False
+TRX-000070,2024-03-12,PRF-013,Hermès Saepe Absolu,Fresh,50,2,4020000,8040000,Offline,Bandung,Regular,,False
+TRX-000091,2024-03-17,PRF-030,Burberry Sapiente Noir,Oriental,100,4,7776000,31104000,Offline,Medan,Regular,,False
+TRX-000040,2024-03-22,PRF-008,Jo Malone Ex Oud,Oriental,100,2,8838000,17676000,Offline,Bali,Corporate,CMP-006,False
+TRX-000068,2024-04-05,PRF-003,Burberry Totam Absolu,Fresh,100,3,7362000,22086000,Online,Bandung,VIP,,False
+TRX-000013,2024-04-05,PRF-002,YSL Est Aqua,Oriental,100,3,7812000,23436000,Offline,Medan,VIP,,False
+TRX-000094,2024-04-07,PRF-001,Burberry Eveniet,Gourmand,50,5,1400000,7000000,Online,Bandung,VIP,,False
+TRX-000042,2024-04-20,PRF-030,Burberry Sapiente Noir,Oriental,100,2,7776000,15552000,Wholesale,Bandung,Regular,,False
+TRX-000100,2024-04-23,PRF-025,Dior Odit,Fresh,50,5,730000,3650000,Wholesale,Surabaya,Regular,,False
+TRX-000008,2024-05-03,PRF-001,Burberry Eveniet,Gourmand,50,3,1400000,4200000,Wholesale,Jakarta,Corporate,CMP-006,False
+TRX-000093,2024-05-04,PRF-006,Byredo Dolor Noir,Gourmand,50,4,1910000,7640000,Offline,Surabaya,VIP,,False
+TRX-000022,2024-05-13,PRF-010,Tom Ford Consectetur Absolu,Gourmand,50,3,3620000,10860000,Wholesale,Medan,Regular,,False
+TRX-000012,2024-05-19,PRF-027,Chanel Consectetur,Oriental,50,3,870000,2610000,Online,Bandung,VIP,,False
+TRX-000064,2024-05-26,PRF-020,Le Labo Porro Noir,Aquatic,100,3,4032000,12096000,Wholesale,Jakarta,Regular,CMP-010,False
+TRX-000003,2024-05-27,PRF-004,YSL Possimus,Floral,100,1,8190000,8190000,Online,Bandung,Regular,CMP-001,False
+TRX-000005,2024-05-29,PRF-025,Dior Odit,Fresh,50,2,730000,1460000,Offline,Jakarta,Corporate,CMP-006,False
+TRX-000010,2024-05-30,PRF-030,Burberry Sapiente Noir,Oriental,100,1,7776000,7776000,Online,Jakarta,Regular,,False
+TRX-000050,2024-06-02,PRF-006,Byredo Dolor Noir,Gourmand,100,5,3438000,17190000,Offline,Jakarta,VIP,,False
+TRX-000089,2024-06-03,PRF-003,Burberry Totam Absolu,Fresh,100,2,7362000,14724000,Online,Bali,Regular,,False
+TRX-000015,2024-06-05,PRF-008,Jo Malone Ex Oud,Oriental,100,3,8838000,26514000,Offline,Bali,Corporate,CMP-007,False
+TRX-000051,2024-06-06,PRF-029,Jo Malone Cupiditate Absolu,Gourmand,100,5,2916000,14580000,Wholesale,Jakarta,Corporate,,False
+TRX-000027,2024-06-07,PRF-028,Jo Malone Quos Aqua,Aquatic,50,1,2330000,2330000,Offline,Medan,Corporate,,False
+TRX-000028,2024-06-11,PRF-016,Hermès Debitis Flora,Fresh,50,2,950000,1900000,Wholesale,Jakarta,VIP,,False
+TRX-000077,2024-06-16,PRF-026,Le Labo Vel Noir,Oriental,50,2,3620000,7240000,Wholesale,Medan,Regular,,False
+TRX-000071,2024-06-17,PRF-006,Byredo Dolor Noir,Gourmand,100,3,3438000,10314000,Offline,Bali,Corporate,CMP-010,False
+TRX-000059,2024-06-25,PRF-002,YSL Est Aqua,Oriental,100,4,7812000,31248000,Online,Bandung,Regular,,False
+TRX-000026,2024-07-03,PRF-005,Byredo Odit Oud,Gourmand,100,1,4140000,4140000,Wholesale,Bali,VIP,,False
+TRX-000025,2024-07-04,PRF-024,Burberry Quod Flora,Aquatic,50,2,680000,1360000,Wholesale,Surabaya,Regular,CMP-004,False
+TRX-000082,2024-07-14,PRF-020,Le Labo Porro Noir,Aquatic,100,3,4032000,12096000,Offline,Medan,VIP,,False
+TRX-000019,2024-07-15,PRF-030,Burberry Sapiente Noir,Oriental,100,3,7776000,23328000,Wholesale,Jakarta,Corporate,,False
+TRX-000045,2024-07-16,PRF-009,Le Labo Magnam Absolu,Oriental,100,1,6030000,6030000,Wholesale,Medan,Corporate,,False
+TRX-000049,2024-07-20,PRF-021,Jo Malone At,Aquatic,100,2,7920000,15840000,Wholesale,Bandung,Corporate,,False
+TRX-000065,2024-08-01,PRF-001,Burberry Eveniet,Gourmand,50,2,1400000,2800000,Online,Jakarta,VIP,CMP-008,False
+TRX-000014,2024-08-08,PRF-008,Jo Malone Ex Oud,Oriental,100,1,8838000,8838000,Wholesale,Surabaya,Corporate,,False
+TRX-000020,2024-08-15,PRF-023,Jo Malone Sed Aqua,Woody,100,3,7542000,22626000,Online,Bali,Regular,,False
+TRX-000078,2024-08-16,PRF-016,Hermès Debitis Flora,Fresh,50,5,950000,4750000,Online,Medan,Regular,,False
+TRX-000039,2024-08-18,PRF-006,Byredo Dolor Noir,Gourmand,50,3,1910000,5730000,Online,Surabaya,Regular,,False
+TRX-000036,2024-08-20,PRF-009,Le Labo Magnam Absolu,Oriental,100,3,6030000,18090000,Online,Jakarta,Regular,,False
+TRX-000074,2024-08-20,PRF-011,Dior Architecto Noir,Aquatic,100,2,7236000,14472000,Wholesale,Bali,VIP,,False
+TRX-000085,2024-08-23,PRF-003,Burberry Totam Absolu,Fresh,50,2,4090000,8180000,Offline,Surabaya,VIP,,False
+TRX-000079,2024-08-24,PRF-008,Jo Malone Ex Oud,Oriental,50,5,4910000,24550000,Wholesale,Bandung,Corporate,,False
+TRX-000098,2024-08-26,PRF-005,Byredo Odit Oud,Gourmand,100,4,4140000,16560000,Wholesale,Bandung,VIP,,False
+TRX-000041,2024-08-27,PRF-026,Le Labo Vel Noir,Oriental,100,5,6516000,32580000,Offline,Bandung,VIP,CMP-001,False
+TRX-000007,2024-08-28,PRF-008,Jo Malone Ex Oud,Oriental,50,4,4910000,19640000,Online,Medan,VIP,,True
+TRX-000081,2024-08-29,PRF-025,Dior Odit,Fresh,50,1,730000,730000,Online,Bandung,VIP,CMP-003,False
+TRX-000011,2024-08-30,PRF-027,Chanel Consectetur,Oriental,100,5,1566000,7830000,Offline,Jakarta,Corporate,,False
+TRX-000058,2024-09-02,PRF-027,Chanel Consectetur,Oriental,100,3,1566000,4698000,Offline,Bali,Corporate,,False
+TRX-000060,2024-09-02,PRF-008,Jo Malone Ex Oud,Oriental,100,3,8838000,26514000,Online,Surabaya,Corporate,,False
+TRX-000067,2024-09-15,PRF-010,Tom Ford Consectetur Absolu,Gourmand,100,2,6516000,13032000,Offline,Bandung,Regular,,False
+TRX-000047,2024-09-17,PRF-003,Burberry Totam Absolu,Fresh,50,5,4090000,20450000,Offline,Bali,Regular,CMP-001,False
+TRX-000030,2024-09-22,PRF-024,Burberry Quod Flora,Aquatic,50,1,680000,680000,Online,Bandung,Regular,,False
+TRX-000031,2024-09-22,PRF-007,Chanel Hic Noir,Fresh,50,3,3330000,9990000,Offline,Jakarta,VIP,,False
+TRX-000055,2024-09-22,PRF-027,Chanel Consectetur,Oriental,50,2,870000,1740000,Online,Bali,VIP,,False
+TRX-000048,2024-09-22,PRF-021,Jo Malone At,Aquatic,100,4,7920000,31680000,Offline,Surabaya,Corporate,CMP-009,False
+TRX-000006,2024-09-25,PRF-030,Burberry Sapiente Noir,Oriental,50,1,4320000,4320000,Offline,Jakarta,Corporate,,False
+TRX-000056,2024-09-29,PRF-007,Chanel Hic Noir,Fresh,50,4,3330000,13320000,Offline,Bali,VIP,,False
+TRX-000043,2024-10-01,PRF-014,Burberry Doloribus Absolu,Aquatic,100,3,7110000,21330000,Online,Jakarta,VIP,,False
+TRX-000063,2024-10-08,PRF-012,YSL Quod Absolu,Floral,50,1,2670000,2670000,Online,Medan,Corporate,,False
+TRX-000090,2024-10-11,PRF-022,Tom Ford Itaque Intense,Gourmand,50,4,2470000,9880000,Offline,Jakarta,VIP,,False
+TRX-000057,2024-10-12,PRF-014,Burberry Doloribus Absolu,Aquatic,50,3,3950000,11850000,Offline,Surabaya,VIP,,False
+TRX-000076,2024-10-15,PRF-010,Tom Ford Consectetur Absolu,Gourmand,100,1,6516000,6516000,Online,Jakarta,Corporate,CMP-009,False
+TRX-000053,2024-10-20,PRF-002,YSL Est Aqua,Oriental,50,1,4340000,4340000,Wholesale,Jakarta,Regular,,False
+TRX-000080,2024-10-23,PRF-003,Burberry Totam Absolu,Fresh,50,2,4090000,8180000,Online,Jakarta,VIP,,False
+TRX-000052,2024-10-25,PRF-026,Le Labo Vel Noir,Oriental,50,1,3620000,3620000,Offline,Surabaya,Corporate,,False
+TRX-000095,2024-10-27,PRF-027,Chanel Consectetur,Oriental,50,2,870000,1740000,Wholesale,Bali,Regular,CMP-008,False
+TRX-000037,2024-11-06,PRF-004,YSL Possimus,Floral,50,3,4550000,13650000,Online,Bandung,Corporate,,False
+TRX-000018,2024-11-07,PRF-006,Byredo Dolor Noir,Gourmand,50,2,1910000,3820000,Wholesale,Medan,Regular,CMP-003,False
+TRX-000086,2024-11-10,PRF-030,Burberry Sapiente Noir,Oriental,50,4,4320000,17280000,Online,Surabaya,Regular,CMP-002,False
+TRX-000061,2024-11-11,PRF-004,YSL Possimus,Floral,50,1,4550000,4550000,Wholesale,Bali,Regular,CMP-004,False
+TRX-000032,2024-11-16,PRF-002,YSL Est Aqua,Oriental,100,2,7812000,15624000,Offline,Bali,Corporate,,False
+TRX-000035,2024-11-17,PRF-008,Jo Malone Ex Oud,Oriental,50,4,4910000,19640000,Wholesale,Bandung,Corporate,,False
+TRX-000029,2024-11-23,PRF-022,Tom Ford Itaque Intense,Gourmand,50,5,2470000,12350000,Wholesale,Surabaya,Regular,,False
+TRX-000069,2024-11-23,PRF-029,Jo Malone Cupiditate Absolu,Gourmand,50,5,1620000,8100000,Offline,Medan,Corporate,CMP-006,False
+TRX-000073,2024-11-23,PRF-001,Burberry Eveniet,Gourmand,100,1,2520000,2520000,Offline,Bandung,Corporate,CMP-004,False
+TRX-000033,2024-12-03,PRF-014,Burberry Doloribus Absolu,Aquatic,50,2,3950000,7900000,Wholesale,Bali,VIP,CMP-010,False
+TRX-000075,2024-12-06,PRF-001,Burberry Eveniet,Gourmand,100,5,2520000,12600000,Online,Surabaya,Corporate,CMP-010,False
+TRX-000024,2024-12-07,PRF-011,Dior Architecto Noir,Aquatic,50,3,4020000,12060000,Offline,Jakarta,Corporate,,False
+TRX-000017,2024-12-09,PRF-007,Chanel Hic Noir,Fresh,50,1,3330000,3330000,Wholesale,Medan,VIP,,False
+TRX-000087,2024-12-10,PRF-022,Tom Ford Itaque Intense,Gourmand,100,5,4446000,22230000,Wholesale,Jakarta,Regular,,False
+TRX-000009,2024-12-16,PRF-029,Jo Malone Cupiditate Absolu,Gourmand,100,2,2916000,5832000,Offline,Medan,Corporate,CMP-003,False
+TRX-000054,2024-12-19,PRF-009,Le Labo Magnam Absolu,Oriental,50,4,3350000,13400000,Online,Medan,Corporate,,False
+TRX-000097,2024-12-22,PRF-003,Burberry Totam Absolu,Fresh,100,2,7362000,14724000,Wholesale,Surabaya,VIP,,False
+TRX-000092,2024-12-28,PRF-013,Hermès Saepe Absolu,Fresh,50,3,4020000,12060000,Online,Medan,Regular,,False

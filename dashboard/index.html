@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parfum Enterprise AI Dashboard</title>
+    <link rel="stylesheet" href="css/style.css?v=4.0">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <i class="fa-solid fa-flask"></i>
+            <span>Parfum Enterprise</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" data-tab="dashboard-tab"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li class="nav-item" data-tab="inventory-tab"><i class="fa-solid fa-boxes-stacked"></i> Stok & Gudang</li>
+            <li class="nav-item" data-tab="sales-tab"><i class="fa-solid fa-file-invoice-dollar"></i> Penjualan</li>
+            <li class="nav-item" data-tab="procurement-tab"><i class="fa-solid fa-cart-flatbed"></i> Pengadaan</li>
+            <li class="nav-item" data-tab="production-tab"><i class="fa-solid fa-industry"></i> Produksi</li>
+            <li class="nav-item" data-tab="agents-tab"><i class="fa-solid fa-robot"></i> Agen AI</li>
+        </ul>
+        <div class="user-profile">
+            <div class="avatar"><i class="fa-solid fa-user-tie"></i></div>
+            <div class="info">
+                <h4>Manajer</h4>
+                <p>Akses Admin</p>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header>
+            <div class="header-title">
+                <h1 id="page-title">Dashboard Utama</h1>
+                <p id="page-subtitle">Monitoring Sistem Multi-Agent AI & Analitik</p>
+            </div>
+            <div class="header-actions">
+                <span class="status-indicator live"><i class="fa-solid fa-circle"></i> Sistem Aktif</span>
+                <span class="status-indicator agent"><i class="fa-solid fa-circle"></i> Agen Aktif</span>
+            </div>
+        </header>
+
+        <!-- TAB 1: DASHBOARD OVERVIEW -->
+        <section id="dashboard-tab" class="tab-content active">
+            <!-- Top Analytics Overview Cards (Hanya di Dashboard) -->
+            <div class="stats-row">
+                <div class="stat-card primary">
+                    <div class="stat-icon"><i class="fa-solid fa-box"></i></div>
+                    <div class="stat-info">
+                        <h3>Total Produk</h3>
+                        <p id="total-products">---</p>
+                    </div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                    <div class="stat-info">
+                        <h3>Total Pendapatan</h3>
+                        <p id="total-revenue">---</p>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="stat-info">
+                        <h3>Stok Menipis</h3>
+                        <p id="low-stock">---</p>
+                    </div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+                    <div class="stat-info">
+                        <h3>Stok Habis</h3>
+                        <p id="out-of-stock">---</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="middle-row">
+                    <!-- AI Chat Interface -->
+                    <div class="panel chat-panel">
+                        <div class="panel-header">
+                            <h2><i class="fa-solid fa-robot"></i> Copilot Multi-Agent AI</h2>
+                        </div>
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="message agent">
+                                <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                                <div class="bubble">Halo! Saya adalah AI Assistant Enterprise Anda. Saya terhubung dengan divisi Sales, Inventory, Formulation, dan Procurement. Ada yang bisa saya bantu hari ini?</div>
+                            </div>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="chat-input" placeholder="Tanya tentang produk, stok, atau rekomendasi parfum...">
+                            <button id="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="charts-panel">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h2><i class="fa-solid fa-trophy"></i> 5 Parfum Terlaris</h2>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="salesChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h2><i class="fa-solid fa-chart-area"></i> Tren Pendapatan</h2>
+                                <select id="revenue-filter" class="filter-select">
+                                    <option value="1" selected>1 Bulan</option>
+                                    <option value="3">3 Bulan</option>
+                                    <option value="6">6 Bulan</option>
+                                    <option value="12">12 Bulan</option>
+                                </select>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Row Charts: Stock Distribution & Critical Items -->
+                <div class="middle-row" style="height: 320px;">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2><i class="fa-solid fa-chart-pie"></i> Distribusi Stok per Ukuran</h2>
+                        </div>
+                        <div class="chart-container" style="height: 230px;">
+                            <canvas id="stockDonutChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2><i class="fa-solid fa-chart-bar"></i> 10 Stok Tersedikit (Perhatian)</h2>
+                        </div>
+                        <div class="chart-container" style="height: 230px;">
+                            <canvas id="stockBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Logs -->
+                <div class="bottom-row">
+                    <div class="panel log-panel">
+                        <div class="panel-header">
+                            <h2><i class="fa-solid fa-terminal"></i> Log Evaluasi Langsung</h2>
+                            <button id="refresh-logs" class="btn-icon"><i class="fa-solid fa-rotate-right"></i></button>
+                        </div>
+                        <div class="log-container">
+                            <table id="log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Waktu</th>
+                                        <th>Agen / Alat</th>
+                                        <th>Cuplikan Input</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="log-body">
+                                    <tr><td colspan="4" class="text-center">Memuat logs...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: INVENTORY MANAGEMENT -->
+        <section id="inventory-tab" class="tab-content">
+            <div class="table-filter-bar" style="justify-content: space-between;">
+                <div class="inventory-toggle-group">
+                    <button class="toggle-btn active" id="btn-inventory-perfumes" onclick="switchInventorySubTab('perfumes')">
+                        <i class="fa-solid fa-bottle-droplet"></i> Stok Parfum
+                    </button>
+                    <button class="toggle-btn" id="btn-inventory-ingredients" onclick="switchInventorySubTab('ingredients')">
+                        <i class="fa-solid fa-vial"></i> Stok Bahan Baku (Ingredients)
+                    </button>
+                </div>
+                <input type="text" id="inventory-search" class="search-input" placeholder="Cari parfum atau bahan baku...">
+            </div>
+            
+            <!-- Table 1: Perfumes -->
+            <div class="panel" id="panel-inventory-perfumes">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Parfum</th>
+                                <th>Nama Parfum</th>
+                                <th>Ukuran (ml)</th>
+                                <th>Stok Tersedia</th>
+                                <th>Titik Reorder</th>
+                                <th>Harga Satuan</th>
+                                <th>Lokasi Gudang</th>
+                                <th>Status Stok</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body">
+                            <tr><td colspan="8" class="text-center">Memuat data inventory...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Table 2: Ingredients -->
+            <div class="panel" id="panel-inventory-ingredients" style="display: none;">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Bahan</th>
+                                <th>Nama Bahan Baku</th>
+                                <th>Kategori</th>
+                                <th>Stok Tersedia</th>
+                                <th>Titik Reorder</th>
+                                <th>Biaya / Unit</th>
+                                <th>Asal Negara</th>
+                                <th>Status Stok</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ingredients-table-body">
+                            <tr><td colspan="8" class="text-center">Memuat data bahan baku...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: SALES HISTORY -->
+        <section id="sales-tab" class="tab-content">
+            <div class="table-filter-bar">
+                <input type="text" id="sales-search" class="search-input" placeholder="Cari transaksi...">
+            </div>
+            <div class="panel">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Transaksi</th>
+                                <th>Tanggal</th>
+                                <th>Nama Parfum</th>
+                                <th>Jumlah (Qty)</th>
+                                <th>Total Pendapatan</th>
+                                <th>Kota Pelanggan</th>
+                                <th>Kanal Penjualan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-table-body">
+                            <tr><td colspan="7" class="text-center">Memuat data penjualan...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: PROCUREMENT ORDERS -->
+        <section id="procurement-tab" class="tab-content">
+            <div class="table-filter-bar">
+                <select id="procurement-status-filter" class="filter-select">
+                    <option value="">Semua Status</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="APPROVED">APPROVED</option>
+                    <option value="ORDERED">ORDERED</option>
+                    <option value="RECEIVED">RECEIVED</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                </select>
+                <input type="text" id="procurement-search" class="search-input" placeholder="Cari supplier...">
+            </div>
+            <div class="panel">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No. PO</th>
+                                <th>Pemasok</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Total Bahan</th>
+                                <th>Est. Biaya</th>
+                                <th>Tgl Dibuat</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="procurement-table-body">
+                            <tr><td colspan="8" class="text-center">Memuat data purchase orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls" id="procurement-pagination"></div>
+            </div>
+        </section>
+
+        <!-- TAB 5: PRODUCTION ORDERS -->
+        <section id="production-tab" class="tab-content">
+            <div class="table-filter-bar">
+                <select id="production-status-filter" class="filter-select">
+                    <option value="">Semua Status</option>
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="READY">READY</option>
+                    <option value="IN_PROGRESS">IN_PROGRESS</option>
+                    <option value="COMPLETED">COMPLETED</option>
+                    <option value="FAILED">FAILED</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                </select>
+                <input type="text" id="production-search" class="search-input" placeholder="Cari parfum...">
+            </div>
+            <div class="panel">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No. Produksi</th>
+                                <th>Nama Parfum</th>
+                                <th>Ukuran</th>
+                                <th>Qty Diminta</th>
+                                <th>Qty Hasil</th>
+                                <th>Status</th>
+                                <th>Durasi</th>
+                                <th>Tgl Dibuat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="production-table-body">
+                            <tr><td colspan="8" class="text-center">Memuat data produksi...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls" id="production-pagination"></div>
+            </div>
+        </section>
+
+        <!-- TAB 6: AI AGENTS ARCHITECTURE & LIVE METRICS -->
+        <section id="agents-tab" class="tab-content">
+            <div class="agents-grid">
+                <div class="agent-card" id="card-NLUService">
+                    <div class="agent-header">
+                        <i class="fa-solid fa-brain"></i>
+                        <h3>NLU Service (Intent & Coref)</h3>
+                    </div>
+                    <p>Menganalisis maksud pengguna dengan 5 layer resolution deterministik & LLM fallback.</p>
+                    <div class="agent-metrics">
+                        <div class="metric-item"><span class="metric-label">Rata-rata Latensi</span><span class="metric-value" id="lat-NLUService">-- ms</span></div>
+                        <div class="metric-item"><span class="metric-label">Total Panggilan</span><span class="metric-value" id="calls-NLUService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Panggilan Terakhir</span><span class="metric-value" id="last-NLUService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Tingkat Error</span><span class="metric-value" id="err-NLUService">--%</span></div>
+                    </div>
+                    <div class="agent-meta">
+                        <span><i class="fa-solid fa-layer-group"></i> Arsitektur NLU 5-Layer</span>
+                        <span class="status success">Aktif</span>
+                    </div>
+                </div>
+
+                <div class="agent-card" id="card-InventoryService">
+                    <div class="agent-header">
+                        <i class="fa-solid fa-warehouse"></i>
+                        <h3>Inventory Service</h3>
+                    </div>
+                    <p>Melakukan pengecekan stok produk jadi di gudang SQLite dan memicu alur produksi jika stok kurang.</p>
+                    <div class="agent-metrics">
+                        <div class="metric-item"><span class="metric-label">Rata-rata Latensi</span><span class="metric-value" id="lat-InventoryService">-- ms</span></div>
+                        <div class="metric-item"><span class="metric-label">Total Panggilan</span><span class="metric-value" id="calls-InventoryService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Panggilan Terakhir</span><span class="metric-value" id="last-InventoryService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Tingkat Error</span><span class="metric-value" id="err-InventoryService">--%</span></div>
+                    </div>
+                    <div class="agent-meta">
+                        <span><i class="fa-solid fa-database"></i> SQLite DB (inventory)</span>
+                        <span class="status success">Aktif</span>
+                    </div>
+                </div>
+
+                <div class="agent-card" id="card-ProductionService">
+                    <div class="agent-header">
+                        <i class="fa-solid fa-flask-vial"></i>
+                        <h3>Production Service</h3>
+                    </div>
+                    <p>Mengecek resep/formula parfum dan stok bahan baku esensial. Memicu Procurement jika bahan kurang.</p>
+                    <div class="agent-metrics">
+                        <div class="metric-item"><span class="metric-label">Rata-rata Latensi</span><span class="metric-value" id="lat-ProductionService">-- ms</span></div>
+                        <div class="metric-item"><span class="metric-label">Total Panggilan</span><span class="metric-value" id="calls-ProductionService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Panggilan Terakhir</span><span class="metric-value" id="last-ProductionService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Tingkat Error</span><span class="metric-value" id="err-ProductionService">--%</span></div>
+                    </div>
+                    <div class="agent-meta">
+                        <span><i class="fa-solid fa-database"></i> SQLite DB (formula, ingredients)</span>
+                        <span class="status success">Aktif</span>
+                    </div>
+                </div>
+
+                <div class="agent-card" id="card-ProcurementService">
+                    <div class="agent-header">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                        <h3>Procurement Service</h3>
+                    </div>
+                    <p>Mencari supplier bahan baku terbaik berdasarkan harga, waktu pengiriman, dan membuat Purchase Order.</p>
+                    <div class="agent-metrics">
+                        <div class="metric-item"><span class="metric-label">Rata-rata Latensi</span><span class="metric-value" id="lat-ProcurementService">-- ms</span></div>
+                        <div class="metric-item"><span class="metric-label">Total Panggilan</span><span class="metric-value" id="calls-ProcurementService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Panggilan Terakhir</span><span class="metric-value" id="last-ProcurementService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Tingkat Error</span><span class="metric-value" id="err-ProcurementService">--%</span></div>
+                    </div>
+                    <div class="agent-meta">
+                        <span><i class="fa-solid fa-database"></i> SQLite DB (supplier, PO)</span>
+                        <span class="status success">Aktif</span>
+                    </div>
+                </div>
+
+                <div class="agent-card" id="card-PricingService">
+                    <div class="agent-header">
+                        <i class="fa-solid fa-tag"></i>
+                        <h3>Pricing Service</h3>
+                    </div>
+                    <p>Menghitung kalkulasi harga per varian (30ml, 50ml, 100ml) dari database katalog.</p>
+                    <div class="agent-metrics">
+                        <div class="metric-item"><span class="metric-label">Rata-rata Latensi</span><span class="metric-value" id="lat-PricingService">-- ms</span></div>
+                        <div class="metric-item"><span class="metric-label">Total Panggilan</span><span class="metric-value" id="calls-PricingService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Panggilan Terakhir</span><span class="metric-value" id="last-PricingService">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Tingkat Error</span><span class="metric-value" id="err-PricingService">--%</span></div>
+                    </div>
+                    <div class="agent-meta">
+                        <span><i class="fa-solid fa-database"></i> SQLite DB (perfume_catalog)</span>
+                        <span class="status success">Aktif</span>
+                    </div>
+                </div>
+
+                <div class="agent-card" id="card-CoordinatorAI">
+                    <div class="agent-header">
+                        <i class="fa-solid fa-robot"></i>
+                        <h3>Coordinator AI Agent</h3>
+                    </div>
+                    <p>Mengompilasi hasil dari seluruh service agent menjadi jawaban natural language yang ramah dan profesional.</p>
+                    <div class="agent-metrics">
+                        <div class="metric-item"><span class="metric-label">Rata-rata Latensi</span><span class="metric-value" id="lat-CoordinatorAI">-- ms</span></div>
+                        <div class="metric-item"><span class="metric-label">Total Panggilan</span><span class="metric-value" id="calls-CoordinatorAI">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Panggilan Terakhir</span><span class="metric-value" id="last-CoordinatorAI">--</span></div>
+                        <div class="metric-item"><span class="metric-label">Tingkat Error</span><span class="metric-value" id="err-CoordinatorAI">--%</span></div>
+                    </div>
+                    <div class="agent-meta">
+                        <span><i class="fa-solid fa-microchip"></i> Orkestrasi LangGraph</span>
+                        <span class="status success">Aktif</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/app.js?v=4.0"></script>
+</body>
+</html>
