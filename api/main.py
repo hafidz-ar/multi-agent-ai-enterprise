@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+import asyncio
+import traceback
 
 # Add project root to path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,16 +38,23 @@ class ChatRequest(BaseModel):
     client_timestamp: str = ""
     dashboard_version: str = ""
 
+SESSION_LOCKS = {}
+
 @app.post("/api/chat")
-def chat_endpoint(req: ChatRequest):
-    try:
-        # Delay 15 detik sebelum memanggil LLM untuk menghindari rate limit Groq API
-        time.sleep(15)
-        # Panggil LangGraph workflow dengan session_id
-        response = run_workflow(req.message, session_id=req.session_id)
-        return {"status": "success", "response": response}
-    except Exception as e:
-        return {"status": "error", "response": f"Terjadi kesalahan pada sistem: {str(e)}"}
+async def chat_endpoint(req: ChatRequest):
+    if req.session_id not in SESSION_LOCKS:
+        SESSION_LOCKS[req.session_id] = asyncio.Lock()
+        
+    async with SESSION_LOCKS[req.session_id]:
+        try:
+            # Menggunakan asyncio.sleep agar tidak memblokir threadpool utama FastAPI
+            await asyncio.sleep(15)
+            # Menjalankan workflow sinkron di thread terpisah (non-blocking)
+            response = await asyncio.to_thread(run_workflow, req.message, session_id=req.session_id)
+            return {"status": "success", "response": response}
+        except Exception as e:
+            traceback.print_exc()
+            return {"status": "error", "response": f"Terjadi kesalahan pada sistem: {str(e)}"}
 
 @app.get("/api/analytics/sales")
 def get_sales_analytics():
