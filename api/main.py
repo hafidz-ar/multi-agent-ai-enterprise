@@ -48,7 +48,7 @@ async def chat_endpoint(req: ChatRequest):
     async with SESSION_LOCKS[req.session_id]:
         try:
             # Menggunakan asyncio.sleep agar tidak memblokir threadpool utama FastAPI
-            await asyncio.sleep(15)
+            await asyncio.sleep(5)
             # Menjalankan workflow sinkron di thread terpisah (non-blocking)
             response = await asyncio.to_thread(run_workflow, req.message, session_id=req.session_id)
             return {"status": "success", "response": response}
