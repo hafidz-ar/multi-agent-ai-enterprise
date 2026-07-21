@@ -11,10 +11,7 @@ venv.bak/
 .env
 
 # Databases
-*.db
-*.sqlite3
-data/database/*.db
-data/vectorstore/chroma_db/
+# (Sengaja tidak di-ignore agar database ikut ke Render untuk UAS)
 
 # Logs
 logs/
