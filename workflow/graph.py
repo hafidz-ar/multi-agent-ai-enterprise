@@ -185,8 +185,13 @@ def _trim_history(history: list, maxlen: int = _HISTORY_MAXLEN) -> list:
     return history[-maxlen:] if len(history) > maxlen else history
 
 
+_COMPILED_WORKFLOW = None
+
 def run_workflow(user_input: str, session_id: str = "default_session") -> str:
-    app = build_workflow()
+    global _COMPILED_WORKFLOW
+    if _COMPILED_WORKFLOW is None:
+        _COMPILED_WORKFLOW = build_workflow()
+    app = _COMPILED_WORKFLOW
     req_id = str(uuid.uuid4())
 
     # ── Retrieve session ────────────────────────────────────────────────────
@@ -206,6 +211,9 @@ def run_workflow(user_input: str, session_id: str = "default_session") -> str:
         conv_ctx.pop("conversation_goal", None)
         old_ctx["tx"] = tx_ctx
         old_ctx["conv"] = conv_ctx
+        # Reset resolved entities to prevent stale context
+        old_ctx["resolved"] = {}
+        old_ctx["pending_slot"] = ""
 
     # Conversation history is stored as plain list; enforce maxlen on load
     conv_history = _trim_history(old_ctx.get("history", []))

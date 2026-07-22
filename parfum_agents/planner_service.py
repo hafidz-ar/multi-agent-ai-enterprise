@@ -45,7 +45,7 @@ def run(state: AgentState) -> dict:
     elif goal in ["PURCHASE", "RESTOCK"] and ambiguities:
         planner_status = "CLARIFICATION_REQUIRED"
         execution_plan = ["CoordinatorAI"]
-    elif goal in ["UNKNOWN", "GREETING", "CONFIRM", "REJECT"]:
+    elif goal in ["UNKNOWN", "GREETING", "CONFIRM", "REJECT", "GRATITUDE", "HELP", "RECOMMENDATION", "CATALOG_CHECK"]:
         execution_plan = ["CoordinatorAI"]
         pending_slot   = ""  # clear any stale pending slot on terminal intents
     else:

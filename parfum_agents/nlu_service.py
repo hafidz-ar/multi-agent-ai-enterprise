@@ -376,8 +376,16 @@ def _semantic_frame_from_rules(input_text: str, catalog: list):
         goal = "CONFIRM"
     elif any(w in text for w in ["tidak", "batal", "ga jadi", "cancel", "nggak", "gak mau", "jangan", "enggak", "tidak jadi", "skip", "lewat"]):
         goal = "REJECT"
-    elif any(w in text for w in ["tunai", "cash", "transfer", "bca", "qris", "mandiri", "gopay", "ovo", "dana", "shopeepay", "linkaja", "bri", "rekening", "cicilan"]):
+    elif any(w in text for w in ["tunai", "cash", "transfer", "bca", "qris", "gopay", "ovo", "mandiri", "shopeepay", "linkaja", "bri", "rekening", "cicilan"]):
         goal = "PAYMENT_METHOD"
+    elif any(w in text for w in ["terima kasih", "makasih", "thanks", "thank you", "tq", "thx", "trims"]):
+        goal = "GRATITUDE"
+    elif any(w in text for w in ["bantuan", "help", "bisa apa", "fitur", "apa saja", "apa aja", "cara pakai", "panduan", "tutorial"]):
+        goal = "HELP"
+    elif any(w in text for w in ["rekomendasi", "recommend", "suggest", "saran", "cocok untuk", "parfum untuk", "parfum pria", "parfum wanita", "parfum unisex"]):
+        goal = "RECOMMENDATION"
+    elif any(w in text for w in ["katalog", "daftar parfum", "list parfum", "semua parfum", "produk apa saja", "koleksi"]):
+        goal = "CATALOG_CHECK"
 
     if not goal:
         return None
@@ -612,8 +620,24 @@ def _extract_period_with_range(text: str) -> dict | None:
     Maps natural language time expressions to a label + ISO date range.
     Returns dict with keys: label, start_date, end_date (YYYY-MM-DD strings)
     or None if not matched.
+    Auto-adjusts to data year if current year has no data.
     """
     today = datetime.now().date()
+    
+    # Auto-detect data year from DB
+    try:
+        import sqlite3
+        conn = sqlite3.connect(config.DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT MAX(date) FROM sales_history")
+        row = c.fetchone()
+        conn.close()
+        if row and row[0]:
+            max_date = datetime.strptime(row[0][:10], "%Y-%m-%d").date()
+            if max_date.year != today.year:
+                today = max_date  # Use data's latest date as reference
+    except Exception:
+        pass
 
     def iso(d):
         return d.strftime("%Y-%m-%d")

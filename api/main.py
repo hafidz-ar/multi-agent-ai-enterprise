@@ -39,16 +39,26 @@ class ChatRequest(BaseModel):
     dashboard_version: str = ""
 
 SESSION_LOCKS = {}
+SESSION_LOCK_TIMES = {}
+_MAX_SESSION_AGE = 1800  # 30 minutes
+
+def _cleanup_old_sessions():
+    """Remove session locks older than 30 minutes to prevent memory leak."""
+    now = time.time()
+    expired = [sid for sid, ts in SESSION_LOCK_TIMES.items() if now - ts > _MAX_SESSION_AGE]
+    for sid in expired:
+        SESSION_LOCKS.pop(sid, None)
+        SESSION_LOCK_TIMES.pop(sid, None)
 
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
+    _cleanup_old_sessions()
     if req.session_id not in SESSION_LOCKS:
         SESSION_LOCKS[req.session_id] = asyncio.Lock()
+    SESSION_LOCK_TIMES[req.session_id] = time.time()
         
     async with SESSION_LOCKS[req.session_id]:
         try:
-            # Menggunakan asyncio.sleep agar tidak memblokir threadpool utama FastAPI
-            await asyncio.sleep(5)
             # Menjalankan workflow sinkron di thread terpisah (non-blocking)
             response = await asyncio.to_thread(run_workflow, req.message, session_id=req.session_id)
             return {"status": "success", "response": response}
@@ -385,6 +395,11 @@ def progress_procurement_order(po_id: str):
             for item in items:
                 ing_id = item[0]
                 qty = item[1]
+                # Get current stock before update
+                c.execute("SELECT stock_available FROM ingredients WHERE ingredient_id = ?", (ing_id,))
+                stock_row = c.fetchone()
+                qty_before = stock_row[0] if stock_row else 0
+                qty_after = qty_before + qty
                 c.execute("UPDATE ingredients SET stock_available = stock_available + ? WHERE ingredient_id = ?", (qty, ing_id))
                 
                 # Insert Ledger
@@ -394,7 +409,7 @@ def progress_procurement_order(po_id: str):
                         id, ingredient_id, movement_type, qty_before, qty_change, qty_after, 
                         reference_type, reference_id, created_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (str(uuid.uuid4()), ing_id, 'PURCHASE', 0, qty, 0, 'PROCUREMENT', po_id, now)) # Note: qty_before/after ideally calculated, but simplified here
+                """, (str(uuid.uuid4()), ing_id, 'PURCHASE', qty_before, qty, qty_after, 'PROCUREMENT', po_id, now))
         else:
             conn.close()
             return {"status": "info", "message": f"Purchase Order sudah mencapai status {current_status}", "new_status": current_status}

@@ -84,8 +84,23 @@ def run(state: AgentState) -> dict:
 
     # ------------------------------------------------------------------ #
     # 2. Tidak ada service data — bisa karena GREETING / UNKNOWN intent   #
-    #    Tetap panggil LLM untuk respon natural, bukan hardcode "Halo!"   #
+    #    Atau GRATITUDE / HELP / RECOMMENDATION / CATALOG_CHECK            #
     # ------------------------------------------------------------------ #
+    if goal == "GRATITUDE":
+        return _respond_directly(start_time, "Sama-sama! Senang bisa membantu Anda. Jika ada pertanyaan lain seputar parfum, jangan ragu untuk bertanya ya! 😊")
+    
+    if goal == "HELP":
+        return _respond_directly(start_time, 
+            "Berikut hal-hal yang bisa saya bantu:\n\n"
+            "🛒 **Pembelian** — \"Beli Chanel Noir 50ml\"\n"
+            "💰 **Cek Harga** — \"Berapa harga YSL Ratione Noir?\"\n"
+            "📦 **Cek Stok** — \"Stok Tom Ford Intense ada?\"\n"
+            "📊 **Laporan Penjualan** — \"Laporan bulan ini\"\n"
+            "🔄 **Restock/Reorder** — \"Restok Tom Ford Intense 50ml 50 botol\"\n"
+            "🎯 **Rekomendasi** — \"Rekomendasi parfum untuk pria\"\n\n"
+            "Silakan ketik pertanyaan Anda!"
+        )
+
     if not services_results:
         return _handle_no_service(state, user_input, goal, ambiguities, start_time)
 

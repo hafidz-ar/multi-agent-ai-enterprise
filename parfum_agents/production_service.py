@@ -103,7 +103,7 @@ def run(state: AgentState) -> dict:
                 "required": dibutuhkan
             })
             
-            if tersedia < dibutuhkan:
+            if round(tersedia, 2) < round(dibutuhkan, 2):
                 missing_ingredients.append({
                     "ingredient_id": ing_id,
                     "ingredient_name": ing_name,
@@ -153,12 +153,16 @@ def run(state: AgentState) -> dict:
                 """, (item["required"], item["ingredient_id"]))
                 
                 # 4. Insert Ingredient Ledger
+                qty_before = ingredients_stock.get(item["ingredient_id"], 0)
+                qty_after = qty_before - item["required"]
                 c.execute("""
                     INSERT INTO ingredient_transactions (
                         id, ingredient_id, movement_type, qty_before, qty_change, qty_after, 
                         reference_type, reference_id, created_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (str(uuid.uuid4()), item["ingredient_id"], 'CONSUMPTION', 0, -item["required"], 0, 'PRODUCTION', po_id, now))
+                """, (str(uuid.uuid4()), item["ingredient_id"], 'CONSUMPTION', qty_before, -item["required"], qty_after, 'PRODUCTION', po_id, now))
+                # Update local tracker for next iteration
+                ingredients_stock[item["ingredient_id"]] = qty_after
                 
             # 5. Update Inventory
             c.execute("""

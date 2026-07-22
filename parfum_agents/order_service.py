@@ -63,11 +63,24 @@ def run(state: AgentState) -> dict:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 tx_id, today, perfume_id, p_name, category, 
-                size_ml, qty, price, total_price, 
+                size_ml, qty, unit_price, total_price, 
                 "Chatbot", "Online", "Retail", "None", 0
             ))
             
-            # 3. Update inventory
+            # 3. Update inventory (with negative stock protection)
+            c.execute("""
+                SELECT quantity_available FROM inventory 
+                WHERE perfume_id = ? AND size_ml = ?
+            """, (perfume_id, size_ml))
+            current_stock_row = c.fetchone()
+            current_stock = current_stock_row[0] if current_stock_row else 0
+            
+            if current_stock < qty:
+                conn.rollback()
+                conn.close()
+                return _error_response(exec_id, start_time, tx_context, 
+                    f"Stok {p_name} {size_ml}ml tidak mencukupi (tersisa {current_stock} pcs, diminta {qty} pcs).")
+            
             c.execute("""
                 UPDATE inventory 
                 SET quantity_available = quantity_available - ? 
