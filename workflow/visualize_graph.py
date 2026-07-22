@@ -21,11 +21,17 @@ def generate_visualizations():
     except Exception as e:
         print(f"ASCII graph skipped: {e} (Hint: 'pip install grandalf' to enable ASCII rendering)")
 
+    DOCS_DIR = BASE_DIR / "docs"
+    DASHBOARD_DIR = BASE_DIR / "dashboard"
+    DOCS_DIR.mkdir(exist_ok=True)
+    DASHBOARD_DIR.mkdir(exist_ok=True)
+
     # 2. Raw Mermaid Code from LangGraph
     raw_mermaid_code = graph.draw_mermaid()
-    raw_mermaid_file = BASE_DIR / "workflow_graph_raw.mmd"
+    raw_mermaid_file = DOCS_DIR / "workflow_graph_raw.mmd"
     with open(raw_mermaid_file, "w", encoding="utf-8") as f:
         f.write(raw_mermaid_code)
+
 
     # 3. 100% Valid, Clean & Tested Mermaid Syntax Diagram
     clean_mermaid_code = """---
@@ -107,11 +113,12 @@ flowchart TD
     class INV,PROD,PROC,PRIC,REP,ORD service;
     class COORD llm;
 """
-    clean_mermaid_file = BASE_DIR / "workflow_graph_clean.mmd"
+    clean_mermaid_file = DOCS_DIR / "workflow_graph_clean.mmd"
     with open(clean_mermaid_file, "w", encoding="utf-8") as f:
         f.write(clean_mermaid_code)
     print(f"Saved Raw Mermaid Diagram: {raw_mermaid_file}")
     print(f"Saved Clean Mermaid Diagram: {clean_mermaid_file}")
+
 
     # 4. Generate Interactive Standalone HTML Document
     html_content = f"""<!DOCTYPE html>
@@ -486,8 +493,8 @@ flowchart TD
 </body>
 </html>
 """
-    html_file = BASE_DIR / "workflow_graph.html"
-    dashboard_html_file = BASE_DIR / "dashboard" / "workflow_graph.html"
+    html_file = DOCS_DIR / "workflow_graph.html"
+    dashboard_html_file = DASHBOARD_DIR / "workflow_graph.html"
     with open(html_file, "w", encoding="utf-8") as f:
         f.write(html_content)
     with open(dashboard_html_file, "w", encoding="utf-8") as f:
@@ -498,8 +505,8 @@ flowchart TD
     # 5. Try generating PNG image
     try:
         png_bytes = graph.draw_mermaid_png()
-        png_file = BASE_DIR / "workflow_graph.png"
-        dashboard_png_file = BASE_DIR / "dashboard" / "workflow_graph.png"
+        png_file = DOCS_DIR / "workflow_graph.png"
+        dashboard_png_file = DASHBOARD_DIR / "workflow_graph.png"
         with open(png_file, "wb") as f:
             f.write(png_bytes)
         with open(dashboard_png_file, "wb") as f:
@@ -507,6 +514,7 @@ flowchart TD
         print(f"Saved PNG Graph Image: {png_file}")
     except Exception as e:
         print(f"Note: PNG export via mermaid API skipped ({e}). HTML & Mermaid MMD files are available!")
+
 
 if __name__ == "__main__":
     generate_visualizations()

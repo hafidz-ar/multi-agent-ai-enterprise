@@ -87,7 +87,11 @@ UAS/
 │   └── exports/                 # Placeholders for generated report exports
 │
 ├── docs/                        # 📚 Architecture & System Documentation
-│   └── .gitkeep
+│   ├── workflow_graph.html      # Visualisasi interaktif HTML diagram workflow
+│   ├── workflow_graph.png       # Ekspor gambar PNG diagram workflow
+│   ├── workflow_graph_clean.mmd # Kode diagram Mermaid (Custom Tested Syntax)
+│   └── workflow_graph_raw.mmd   # Kode diagram Mermaid (Raw LangGraph Output)
+
 │
 ├── config.py                    # Root config wrapper (re-exports from config package)
 ├── direktori.md                 # Dokumentasi struktur direktori proyek
