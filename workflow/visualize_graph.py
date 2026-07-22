@@ -32,14 +32,14 @@ def generate_visualizations():
     with open(raw_mermaid_file, "w", encoding="utf-8") as f:
         f.write(raw_mermaid_code)
 
-    # 3. 100% Valid, Clean & Tested 10/10 Enterprise Mermaid Syntax Diagram
+    # 3. 100% Valid, Clean, Spacious & Tested 10/10 Enterprise Mermaid Syntax Diagram
     clean_mermaid_code = """---
 config:
   theme: dark
   flowchart:
-    curve: linear
-    nodeSpacing: 40
-    rankSpacing: 50
+    curve: basis
+    nodeSpacing: 80
+    rankSpacing: 100
 ---
 flowchart TD
     %% Node Definitions
@@ -53,12 +53,15 @@ flowchart TD
     WM{"🔀 Workflow Manager<br/>Pure FSM State Router"}
     EE["⚙️ Execution Engine & Action Router<br/>AgentRegistry & Action Dispatcher"]
 
-    PRIC["🏷️ PricingAgent<br/>Action.CHECK_PRICE (Enrichment)"]
-    INV["📦 InventoryAgent<br/>Action.CHECK_STOCK (Read Only)"]
-    ORD["📝 OrderAgent<br/>Action.CREATE_ORDER (Atomic Transaction)"]
-    REP["📊 ReportingAgent<br/>Action.CHECK_REPORT"]
-    PROD["🧪 ProductionAgent<br/>Action.PRODUCE_ITEM"]
-    PROC["🛒 ProcurementAgent<br/>Action.PROCURE_ITEM"]
+    subgraph Agents ["Tahap 2: Specialist Agents (Action Handlers)"]
+        direction LR
+        PRIC["🏷️ PricingAgent<br/>CHECK_PRICE (Enrichment)"]
+        INV["📦 InventoryAgent<br/>CHECK_STOCK (Read Only)"]
+        ORD["📝 OrderAgent<br/>CREATE_ORDER (Atomic Transaction)"]
+        PROD["🧪 ProductionAgent<br/>PRODUCE_ITEM"]
+        PROC["🛒 ProcurementAgent<br/>PROCURE_ITEM"]
+        REP["📊 ReportingAgent<br/>CHECK_REPORT"]
+    end
     
     REPO[("🗄️ Repositories Layer<br/>Catalog, Inventory, Order SQL Isolation")]
     COORD["🤖 Coordinator AI<br/>Action-Indexed Response Synthesizer"]
@@ -66,44 +69,29 @@ flowchart TD
 
     %% 1. Ingestion Pipeline
     subgraph Stage1 ["Tahap 1: Ingestion & Analysis Pipeline"]
-        START --> CM
-        CM --> MEM
-        MEM --> NLU
-        NLU --> EM
-        EM --> PS
-        PS --> WM
+        START --> CM --> MEM --> NLU --> EM --> PS --> WM
     end
 
-    %% 2. Execution Engine & Action Routing
-    subgraph Stage2 ["Tahap 2: Execution Engine & Action Router"]
-        WM --> EE
-        EE -- "Action.CHECK_PRICE" --> PRIC
-        EE -- "Action.CHECK_STOCK" --> INV
-        EE -- "Action.CREATE_ORDER" --> ORD
-        EE -- "Action.CHECK_REPORT" --> REP
-        EE -- "Action.PRODUCE_ITEM" --> PROD
-        EE -- "Action.PROCURE_ITEM" --> PROC
-    end
+    %% 2. Execution Routing
+    WM --> EE
+    EE -- "Action.CHECK_PRICE" --> PRIC
+    EE -- "Action.CHECK_STOCK" --> INV
+    EE -- "Action.CREATE_ORDER" --> ORD
+    EE -- "Action.PRODUCE_ITEM" --> PROD
+    EE -- "Action.PROCURE_ITEM" --> PROC
+    EE -- "Action.CHECK_REPORT" --> REP
 
     %% 3. Persistence Isolation Layer
-    subgraph Stage3 ["Tahap 3: Persistence Isolation Layer"]
-        PRIC --> REPO
-        INV --> REPO
-        ORD -- "Atomic Transaction (BEGIN...COMMIT)" --> REPO
-        PROD --> REPO
-        PROC --> REPO
-    end
+    PRIC --> REPO
+    INV --> REPO
+    ORD -- "Atomic Transaction" --> REPO
+    PROD --> REPO
+    PROC --> REPO
 
     %% 4. Response Synthesis Pipeline
-    subgraph Stage4 ["Tahap 4: Action-Indexed Response Synthesis"]
-        PRIC --> COORD
-        INV --> COORD
-        ORD --> COORD
-        REP --> COORD
-        PROD --> COORD
-        PROC --> COORD
-        COORD --> END_NODE
-    end
+    REPO --> COORD
+    REP --> COORD
+    COORD --> END_NODE
 
     %% Styling Nodes
     classDef startNode fill:#10B981,stroke:#047857,stroke-width:2px,color:#fff,font-weight:bold;
@@ -230,15 +218,15 @@ flowchart TD
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 20px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow: auto;
             position: relative;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-            min-height: 680px;
+            min-height: 850px;
             width: 100%;
         }}
 
@@ -352,39 +340,6 @@ flowchart TD
             margin-top: 2px;
         }}
 
-        .step-list {{
-            counter-reset: step;
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }}
-
-        .step-item {{
-            position: relative;
-            padding-left: 34px;
-            font-size: 0.88rem;
-        }}
-
-        .step-item::before {{
-            counter-increment: step;
-            content: counter(step);
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 22px;
-            height: 22px;
-            background: rgba(139, 92, 246, 0.2);
-            color: #c4b5fd;
-            border: 1px solid rgba(139, 92, 246, 0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }}
-
         .code-preview {{
             background: #090d16;
             border: 1px solid var(--border-color);
@@ -476,9 +431,9 @@ flowchart TD
             flowchart: {{
                 useMaxWidth: true,
                 htmlLabels: true,
-                curve: 'linear',
-                nodeSpacing: 40,
-                rankSpacing: 50
+                curve: 'basis',
+                nodeSpacing: 80,
+                rankSpacing: 100
             }}
         }});
 
