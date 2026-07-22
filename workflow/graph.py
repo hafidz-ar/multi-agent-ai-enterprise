@@ -43,18 +43,12 @@ def _log_metrics(state: AgentState, metrics: dict):
 
 def _advance_plan(state: AgentState, service_name: str, res: dict):
     plan = state.get("execution_plan", [])
-    executed = state.get("executed_plan", [])
-
-    # Merge business_context — new values overwrite old keys
-    existing_ctx = state.get("business_context", {})
-    new_ctx = res.pop("business_context", {})
-    res["business_context"] = {**existing_ctx, **new_ctx}
-
+    
     if plan:
         next_item = plan[0]
         if isinstance(next_item, list):
-            # Parallel stage: remove operation if present
-            # We map node name back to op
+            # Parallel stage: copy list before modifying to prevent side-effects
+            current_stage = list(next_item)
             op_map = {
                 "PricingService": "CHECK_PRICE",
                 "InventoryService": "CHECK_STOCK",
@@ -62,16 +56,19 @@ def _advance_plan(state: AgentState, service_name: str, res: dict):
                 "OrderService": "CREATE_ORDER"
             }
             op = op_map.get(service_name)
-            if op in next_item:
-                next_item.remove(op)
-            if not next_item:
+            if op in current_stage:
+                current_stage.remove(op)
+            if not current_stage:
                 plan = plan[1:]
+            else:
+                plan = [current_stage] + plan[1:]
         else:
             plan = plan[1:]
 
     res["execution_plan"] = plan
-    res["executed_plan"] = executed + [service_name]
+    res["executed_plan"] = [service_name]
     return res
+
 
 # --- Nodes ---
 
