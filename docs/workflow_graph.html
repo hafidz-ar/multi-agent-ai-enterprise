@@ -61,38 +61,11 @@
             font-size: 0.9rem;
         }
 
-        .badge-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        .badge {
-            background: rgba(139, 92, 246, 0.15);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            color: #c4b5fd;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .badge-green {
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #6ee7b7;
-        }
-
         .main-content {
-            display: grid;
-            grid-template-columns: 1fr 340px;
+            display: flex;
+            flex-direction: column;
             gap: 20px;
             flex: 1;
-        }
-
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
         }
 
         .graph-card {
@@ -107,7 +80,7 @@
             overflow: auto;
             position: relative;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-            min-height: 850px;
+            min-height: 880px;
             width: 100%;
         }
 
@@ -117,8 +90,8 @@
             right: 16px;
             display: flex;
             gap: 8px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
             padding: 6px 10px;
             border-radius: 10px;
             border: 1px solid var(--border-color);
@@ -144,6 +117,97 @@
         .control-btn:hover {
             background: var(--accent-purple);
             color: #fff;
+        }
+
+        .graph-overlay-left {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 310px;
+            z-index: 10;
+            max-height: calc(100% - 32px);
+            overflow-y: auto;
+        }
+
+        .overlay-card {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .overlay-card h3 {
+            font-size: 0.92rem;
+            margin-bottom: 10px;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .node-desc {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-top: 1px;
+        }
+
+        .step-list {
+            counter-reset: step;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .step-item {
+            position: relative;
+            padding-left: 24px;
+            font-size: 0.8rem;
+        }
+
+        .step-item::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            background: rgba(139, 92, 246, 0.25);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
         }
 
         .mermaid-wrapper {
@@ -172,86 +236,92 @@
             border-radius: 8px;
         }
 
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .info-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 20px;
-        }
-
-        .info-card h3 {
-            font-size: 1.05rem;
-            margin-bottom: 14px;
-            color: #f1f5f9;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.88rem;
-        }
-
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            flex-shrink: 0;
-        }
-
-        .node-desc {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            margin-top: 2px;
-        }
-
-        .code-preview {
-            background: #090d16;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.78rem;
-            color: #a78bfa;
-            overflow-x: auto;
+        @media (max-width: 1024px) {
+            .graph-overlay-left {
+                position: static;
+                width: 100%;
+                margin-bottom: 16px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-title">
-            <h1>LangGraph Multi-Agent Architecture (10/10 Enterprise Grade)</h1>
+            <h1>LangGraph Multi-Agent Architecture</h1>
             <p>Visualisasi Action Router, Decoupled Repositories, & Execution Engine</p>
-        </div>
-        <div class="badge-container">
-            <span class="badge badge-green">v3.0 Production</span>
-            <span class="badge">Mermaid Live</span>
         </div>
     </div>
 
     <div class="main-content">
         <div class="graph-card">
+            <!-- Controls (Top Right) -->
             <div class="graph-controls">
                 <button class="control-btn" onclick="zoomGraph(0.15)">🔍 +</button>
                 <button class="control-btn" onclick="zoomGraph(-0.15)">🔍 -</button>
                 <button class="control-btn" onclick="resetZoom()">⟲ Reset</button>
             </div>
+
+            <!-- Left Floating Cards (Top Left) -->
+            <div class="graph-overlay-left">
+                <div class="overlay-card">
+                    <h3>📌 Keterangan Komponen</h3>
+                    <ul class="legend-list">
+                        <li class="legend-item">
+                            <div class="legend-color" style="background: #8b5cf6;"></div>
+                            <div>
+                                <strong>Workflow Manager (Pure FSM)</strong>
+                                <div class="node-desc">Router state tanpa dependensi agen</div>
+                            </div>
+                        </li>
+                        <li class="legend-item">
+                            <div class="legend-color" style="background: #14b8a6;"></div>
+                            <div>
+                                <strong>Repositories Layer</strong>
+                                <div class="node-desc">Isolasi SQL (Catalog, Inventory, Order)</div>
+                            </div>
+                        </li>
+                        <li class="legend-item">
+                            <div class="legend-color" style="background: #3b82f6;"></div>
+                            <div>
+                                <strong>Specialist Agents (Action Handlers)</strong>
+                                <div class="node-desc">BaseSpecialistAgent via Action Enum</div>
+                            </div>
+                        </li>
+                        <li class="legend-item">
+                            <div class="legend-color" style="background: #f59e0b;"></div>
+                            <div>
+                                <strong>Coordinator AI</strong>
+                                <div class="node-desc">Action-indexed response synthesizer</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="overlay-card">
+                    <h3>🚀 Alur Eksekusi Diagram</h3>
+                    <ol class="step-list">
+                        <li class="step-item">
+                            <strong>Ingestion & Analysis</strong>
+                            <div class="node-desc">CM ➔ Memory ➔ NLU (Generic) ➔ EventMapper ➔ Planner.</div>
+                        </li>
+                        <li class="step-item">
+                            <strong>FSM & Action Router</strong>
+                            <div class="node-desc">WorkflowManager FSM ➔ ExecutionEngine & ActionRouter.</div>
+                        </li>
+                        <li class="step-item">
+                            <strong>Execution & Repositories</strong>
+                            <div class="node-desc">Pricing & Inventory (Read-Only) ➔ Order (Atomic Write).</div>
+                        </li>
+                        <li class="step-item">
+                            <strong>Response Synthesis</strong>
+                            <div class="node-desc">Coordinator AI menyintesiskan teks jawaban ke pengguna.</div>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Mermaid Canvas -->
             <div class="mermaid-wrapper">
                 <div class="mermaid" id="mermaid-element">
 ---
@@ -331,51 +401,6 @@ flowchart TD
     class REPO repo;
     class COORD llm;
 
-                </div>
-            </div>
-        </div>
-
-        <div class="sidebar">
-            <div class="info-card">
-                <h3>📌 Keterangan Komponen</h3>
-                <ul class="legend-list">
-                    <li class="legend-item">
-                        <div class="legend-color" style="background: #8b5cf6;"></div>
-                        <div>
-                            <strong>Workflow Manager (Pure FSM)</strong>
-                            <div class="node-desc">Router state tanpa dependensi agen</div>
-                        </div>
-                    </li>
-                    <li class="legend-item">
-                        <div class="legend-color" style="background: #14b8a6;"></div>
-                        <div>
-                            <strong>Repositories Layer</strong>
-                            <div class="node-desc">Isolasi SQL (Catalog, Inventory, Order)</div>
-                        </div>
-                    </li>
-                    <li class="legend-item">
-                        <div class="legend-color" style="background: #3b82f6;"></div>
-                        <div>
-                            <strong>Specialist Agents (Action Handlers)</strong>
-                            <div class="node-desc">BaseSpecialistAgent via Action Enum</div>
-                        </div>
-                    </li>
-                    <li class="legend-item">
-                        <div class="legend-color" style="background: #f59e0b;"></div>
-                        <div>
-                            <strong>Coordinator AI</strong>
-                            <div class="node-desc">Action-indexed response synthesizer</div>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="info-card">
-                <h3>📄 Export Options</h3>
-                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">Mermaid MMD & Interactive HTML file tersimpan secara otomatis.</p>
-                <div class="code-preview">
-                    docs/workflow_graph_clean.mmd<br/>
-                    docs/workflow_graph.html
                 </div>
             </div>
         </div>
