@@ -169,6 +169,8 @@ def coordinator_node(state: AgentState):
         node_res["workflow_state"] = res["workflow_state"]
     if "transaction_context" in res:
         node_res["transaction_context"] = res["transaction_context"]
+    if "conversation_context" in res:
+        node_res["conversation_context"] = res["conversation_context"]
     return node_res
 
 # --- Service Registry ---

@@ -417,7 +417,8 @@ def _semantic_frame_from_rules(input_text: str, catalog: list):
         goal = "REPORT_CHECK"
     elif any(w in text for w in ["rekomendasi", "recommend", "suggest", "saran",
                                   "cocok untuk", "parfum untuk", "parfum pria",
-                                  "parfum wanita", "parfum unisex"]):
+                                  "parfum wanita", "parfum unisex", "terjangkau",
+                                  "harga yang terjangkau", "yang murah", "paling murah"]):
         goal = "RECOMMENDATION"
     elif any(w in text for w in ["bantuan", "help", "bisa apa", "fitur", "apa saja",
                                   "apa aja", "cara pakai", "panduan", "tutorial"]):

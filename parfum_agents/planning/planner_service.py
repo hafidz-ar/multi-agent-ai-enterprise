@@ -103,6 +103,11 @@ def run(state: AgentState) -> dict:
     if goal == "GREETING":
         context["has_greeted"] = True
 
+    if goal == "RECOMMENDATION":
+        context["active_recommendation"] = True
+    elif goal in ["PURCHASE", "RESTOCK", "RESET", "CANCEL"]:
+        context.pop("active_recommendation", None)
+
     if goal == "RESTOCK":
         context["active_workflow"] = "RESTOCK"
         transaction = _merge_restock_transaction(transaction, entities)
@@ -111,7 +116,7 @@ def run(state: AgentState) -> dict:
             if missing <= {"quantity"} and transaction.get("product") and transaction.get("size_ml"):
                 transaction["status"] = "WAITING_QTY"
                 transaction["locked_slots"] = ["product", "size_ml"]
-    elif goal not in ["UNKNOWN", "GREETING"]:
+    elif goal not in ["UNKNOWN", "GREETING", "CONFIRM", "RECOMMENDATION"]:
         context.pop("active_workflow", None)
 
     context["conversation_goal"] = goal

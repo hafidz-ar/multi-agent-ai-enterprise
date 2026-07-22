@@ -9,10 +9,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 import config
 from parfum_agents.tools.utils import log_evaluation
 from parfum_agents.tools.aggregator import AgentResultAggregator
+from parfum_agents.repositories.catalog_repository import CatalogRepository
 from models import AgentState, ResultType, Action
 
 def _load_prompt_template(filename: str) -> str:
-    path = os.path.join(config.PROMPTS_DIR, filename)
+    path = os.path.join(config.BASE_DIR, "prompts", filename)
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
@@ -148,11 +149,13 @@ def run(state: AgentState) -> dict:
             "Silakan ketik pertanyaan Anda!"
         )
 
+    context = state.get("conversation_context", {})
+
     if goal == "GREETING":
         return _respond_directly(start_time, "Halo! Selamat datang di Parfum Enterprise AI Assistant. Ada yang bisa saya bantu terkait katalog, stok, harga, atau pembelian hari ini?")
 
-    if goal == "RECOMMENDATION":
-        return _handle_fallback(state, user_input, goal, entities, start_time)
+    if goal == "RECOMMENDATION" or (goal == "CONFIRM" and context.get("active_recommendation")):
+        return _handle_recommendation(state, user_input, start_time)
 
     if goal == "CATALOG_CHECK":
         return _handle_fallback(state, user_input, goal, entities, start_time)
@@ -314,6 +317,79 @@ Sintesiskan jawaban final yang ramah, profesional, dan to the point untuk pelang
     except Exception:
         fallback_msg = services_results[0].get("user_message", "Permintaan Anda telah diproses.")
         return _respond_directly(start_time, fallback_msg)
+
+def _handle_recommendation(state, user_input: str, start_time: float) -> dict:
+    context = state.get("conversation_context", {})
+    history = state.get("conversation_history", [])
+
+    repo = CatalogRepository()
+    catalog_data = repo.get_catalog_summary()
+
+    catalog_lines = []
+    for item in catalog_data:
+        p_val = item.get('price_idr', 0)
+        p_fmt = f"Rp {p_val:,.0f}".replace(",", ".")
+        name = item.get('name', '')
+        brand = item.get('brand', '')
+        cat = item.get('category', '')
+        gen = item.get('gender', '')
+        top = item.get('top_notes', '')
+        heart = item.get('heart_notes', '')
+        base = item.get('base_notes', '')
+        catalog_lines.append(f"- {name} ({brand}) | Kategori: {cat} | Gender: {gen} | Harga 50ml: {p_fmt} | Notes: {top} (top), {heart} (heart), {base} (base)")
+
+    catalog_text = "\n".join(catalog_lines)
+
+    template = _load_prompt_template("recommendation.txt") or "Kamu adalah AI Assistant resmi toko Parfum Enterprise."
+
+    system_prompt = (
+        f"{template}\n\n"
+        f"DAFTAR KATALOG RESMI PARFUM KAMI:\n"
+        f"{catalog_text}\n\n"
+        f"ATURAN MUTLAK:\n"
+        f"1. Kamu HANYA BOLEH merekomendasikan produk yang ADA dalam DAFTAR KATALOG RESMI di atas.\n"
+        f"2. Sebutkan nama produk, brand, dan harga resminya secara akurat sesuai data katalog.\n"
+        f"3. DILARANG KERAS merekomendasikan merk luar atau membuat nama produk fiktif (seperti 'Parfum Second', 'Parfum Remaja Rp 50.000').\n"
+        f"4. Jika pelanggan membalas dengan persetujuan atau kata seperti 'boleh', 'baik', 'iya', berikan rincian rekomendasi parfum unggulan dari katalog resmi kita."
+    )
+
+    try:
+        llm = ChatGroq(
+            model=config.LLM_MODEL,
+            api_key=config.GROQ_API_KEY,
+            temperature=0.3
+        )
+
+        messages = [SystemMessage(content=system_prompt)]
+        if history:
+            for msg in list(history)[-6:]:
+                r_role = msg.get("role", "user")
+                c_content = msg.get("content", "")
+                if r_role == "user":
+                    messages.append(HumanMessage(content=c_content))
+                else:
+                    messages.append(SystemMessage(content=f"Jawaban kamu sebelumnya: {c_content}"))
+
+        messages.append(HumanMessage(content=user_input))
+
+        response = llm.invoke(messages)
+        final_text = response.content.strip()
+
+        res = _respond_directly(start_time, final_text)
+        res["conversation_context"] = {**context, "active_recommendation": True}
+        return res
+    except Exception:
+        fallback_msg = (
+            "Berikut beberapa rekomendasi parfum favorit di toko kami:\n"
+            "• **YSL Possimus** — Rp 2.957.500 (Aroma Woody & Elegant)\n"
+            "• **Tom Ford Intense** — Rp 3.150.000 (Aroma Warm & Luxury)\n"
+            "• **Le Labo Magnam Absolu** — Rp 2.177.500 (Aroma Fresh & Floral)\n\n"
+            "Apakah ada yang menarik minat Anda?"
+        )
+        res = _respond_directly(start_time, fallback_msg)
+        res["conversation_context"] = {**context, "active_recommendation": True}
+        return res
+
 
 def _handle_fallback(state, user_input, goal, entities, start_time):
     try:

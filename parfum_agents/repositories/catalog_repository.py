@@ -44,3 +44,21 @@ class CatalogRepository:
             return rows
         except Exception:
             return []
+
+    def get_catalog_summary(self) -> list[dict]:
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            c.execute("SELECT name, brand, category, gender, price_idr, top_notes, heart_notes, base_notes FROM perfume_catalog LIMIT 25")
+            rows = c.fetchall()
+            conn.close()
+            return [
+                {
+                    "name": r[0], "brand": r[1], "category": r[2],
+                    "gender": r[3], "price_idr": r[4],
+                    "top_notes": r[5], "heart_notes": r[6], "base_notes": r[7]
+                }
+                for r in rows
+            ]
+        except Exception:
+            return []
