@@ -24,6 +24,17 @@ class ServiceResult(TypedDict):
     developer_message: str
     payload: dict
 
+class AgentResult(TypedDict):
+    """Standardized schema across all specialist agents for Enterprise Observability."""
+    success: bool
+    execution_id: str
+    service_name: str
+    data: dict
+    errors: List[str]
+    warnings: List[str]
+    user_message: str
+    latency_ms: float
+
 class InventoryStatus(str, Enum):
     AVAILABLE = "AVAILABLE"
     LOW_STOCK = "LOW_STOCK"
@@ -92,29 +103,33 @@ class UserContext(TypedDict, total=False):
 class AgentState(TypedDict):
     input: str
     request_id: str
+    trace_context: dict
+
+    # Front-door System Command
+    system_command_triggered: bool
+    system_command: str
 
     # NLU Semantic Frame & Event
     semantic_frame: dict
     workflow_event: str
     event_payload: dict
+    execution_strategy: str
 
     # Execution
     planner_status: str
     execution_plan: list
     executed_plan: list
 
-    # Contexts
+    # Contexts & Memory
     conversation_context: dict
     business_context: dict
     transaction_context: dict
     session_context: dict
     user_context: dict
+    user_preferences: dict
     workflow_state: str
 
     # Multi-turn Conversation Memory
-    # conversation_history: list of dicts with keys:
-    #   role ("user" | "assistant"), content, timestamp, intent (optional)
-    # Stored as a plain list (serializable); graph.py manages maxlen=20 via deque.
     conversation_history: list
 
     # Cross-turn entity memory: last known product, variant, period, etc.

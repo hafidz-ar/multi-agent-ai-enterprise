@@ -1,11 +1,14 @@
 import time
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from parfum_agents.tools.utils import generate_transaction_id
 from parfum_agents.models import AgentState
 
 # Pemetaan deterministik: goal → service operation
-# Ini adalah fallback jika NLU tidak menyertakan requested_operations
 GOAL_TO_OPERATIONS = {
-    "PURCHASE":     ["CHECK_STOCK"],
+    "PURCHASE":     [["CHECK_PRICE", "CHECK_STOCK"]], # Stage 1: Parallel Check
     "PRICE_CHECK":  ["CHECK_PRICE"],
     "STOCK_CHECK":  ["CHECK_STOCK"],
     "REPORT_CHECK": ["CHECK_REPORT"],
@@ -14,7 +17,6 @@ GOAL_TO_OPERATIONS = {
 
 # Priority order for slot clarification
 _SLOT_PRIORITY = ["product", "size_ml", "quantity", "period"]
-
 
 def run(state: AgentState) -> dict:
     start_time = time.time()
@@ -25,6 +27,8 @@ def run(state: AgentState) -> dict:
     confidence     = semantic_frame.get("confidence", 1.0)
     req_ops        = semantic_frame.get("requested_operations", [])
     entities       = semantic_frame.get("entities", {})
+    event_payload  = state.get("event_payload", {})
+    strategy       = event_payload.get("strategy", "SINGLE_AGENT")
 
     execution_plan = []
     planner_status = "READY"
@@ -49,15 +53,29 @@ def run(state: AgentState) -> dict:
         execution_plan = ["CoordinatorAI"]
         pending_slot   = ""  # clear any stale pending slot on terminal intents
     else:
-        # Use req_ops from NLU if available, else deterministic fallback
-        if req_ops:
+        # Check strategy from EventMapper
+        required_agents = event_payload.get("required_agents", [])
+        if strategy == "MULTI_AGENT_PARALLEL" and len(required_agents) > 1:
+            # Map required_agents to operations
+            agent_op_map = {
+                "PricingService": "CHECK_PRICE",
+                "InventoryService": "CHECK_STOCK",
+                "ReportingService": "CHECK_REPORT",
+                "OrderService": "CREATE_ORDER"
+            }
+            parallel_ops = [agent_op_map[ag] for ag in required_agents if ag in agent_op_map]
+            if parallel_ops:
+                execution_plan = [parallel_ops, "CoordinatorAI"]
+            else:
+                execution_plan = GOAL_TO_OPERATIONS.get(goal, ["CoordinatorAI"]).copy()
+        elif req_ops:
             execution_plan = req_ops.copy()
         else:
-            execution_plan = GOAL_TO_OPERATIONS.get(goal, []).copy()
+            execution_plan = GOAL_TO_OPERATIONS.get(goal, ["CoordinatorAI"]).copy()
 
         if not execution_plan:
             execution_plan = ["CoordinatorAI"]
-        elif "CoordinatorAI" not in execution_plan:
+        elif isinstance(execution_plan[-1], str) and execution_plan[-1] != "CoordinatorAI":
             execution_plan.append("CoordinatorAI")
 
     # ── Update structured conversation context ────────────────────────────
@@ -69,7 +87,7 @@ def run(state: AgentState) -> dict:
     if entities.get("quantity"):
         context["current_quantity"] = entities["quantity"]
 
-    # Track whether user has been greeted (suppress future greetings)
+    # Track whether user has been greeted
     if goal == "GREETING":
         context["has_greeted"] = True
 
@@ -98,7 +116,7 @@ def run(state: AgentState) -> dict:
         "_metrics": {
             "agent":      "PlannerService",
             "latency_ms": latency,
-            "decision":   planner_status,
+            "decision":   f"{planner_status}:{strategy}",
             "status":     "OK"
         }
     }

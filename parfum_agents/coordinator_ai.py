@@ -110,9 +110,9 @@ def run(state: AgentState) -> dict:
     safe_service_data = [
         {
             "service": s.get("service_name"),
-            "status": s.get("result_type"),
+            "status": s.get("result_type") or ("SUCCESS" if s.get("success") else "ERROR"),
             "message": s.get("user_message"),
-            "data": s.get("payload")
+            "data": s.get("data") if "data" in s else s.get("payload")
         }
         for s in services_results
     ]

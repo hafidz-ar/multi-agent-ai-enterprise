@@ -1,0 +1,83 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	nlu(nlu)
+	event_mapper(event_mapper)
+	planner(planner)
+	workflow_manager(workflow_manager)
+	inventory(inventory)
+	production(production)
+	procurement(procurement)
+	pricing(pricing)
+	reporting(reporting)
+	order(order)
+	coordinator(coordinator)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> nlu;
+	event_mapper --> planner;
+	inventory -.-> __end__;
+	inventory -.-> coordinator;
+	inventory -.-> order;
+	inventory -.-> pricing;
+	inventory -.-> procurement;
+	inventory -.-> production;
+	inventory -.-> reporting;
+	nlu --> event_mapper;
+	order -.-> __end__;
+	order -.-> coordinator;
+	order -.-> inventory;
+	order -.-> pricing;
+	order -.-> procurement;
+	order -.-> production;
+	order -.-> reporting;
+	planner --> workflow_manager;
+	pricing -.-> __end__;
+	pricing -.-> coordinator;
+	pricing -.-> inventory;
+	pricing -.-> order;
+	pricing -.-> procurement;
+	pricing -.-> production;
+	pricing -.-> reporting;
+	procurement -.-> __end__;
+	procurement -.-> coordinator;
+	procurement -.-> inventory;
+	procurement -.-> order;
+	procurement -.-> pricing;
+	procurement -.-> production;
+	procurement -.-> reporting;
+	production -.-> __end__;
+	production -.-> coordinator;
+	production -.-> inventory;
+	production -.-> order;
+	production -.-> pricing;
+	production -.-> procurement;
+	production -.-> reporting;
+	reporting -.-> __end__;
+	reporting -.-> coordinator;
+	reporting -.-> inventory;
+	reporting -.-> order;
+	reporting -.-> pricing;
+	reporting -.-> procurement;
+	reporting -.-> production;
+	workflow_manager -.-> __end__;
+	workflow_manager -.-> coordinator;
+	workflow_manager -.-> inventory;
+	workflow_manager -.-> order;
+	workflow_manager -.-> pricing;
+	workflow_manager -.-> procurement;
+	workflow_manager -.-> production;
+	workflow_manager -.-> reporting;
+	coordinator --> __end__;
+	inventory -.-> inventory;
+	order -.-> order;
+	pricing -.-> pricing;
+	procurement -.-> procurement;
+	production -.-> production;
+	reporting -.-> reporting;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

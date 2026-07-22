@@ -59,9 +59,11 @@ async def chat_endpoint(req: ChatRequest):
         
     async with SESSION_LOCKS[req.session_id]:
         try:
-            # Menjalankan workflow sinkron di thread terpisah (non-blocking)
-            response = await asyncio.to_thread(run_workflow, req.message, session_id=req.session_id)
-            return {"status": "success", "response": response}
+            import uuid
+            trace_id = f"TRC-{uuid.uuid4().hex[:8].upper()}"
+            # Menjalankan workflow sinkron di thread terpisah (non-blocking) dengan Trace ID
+            response = await asyncio.to_thread(run_workflow, req.message, session_id=req.session_id, trace_id=trace_id)
+            return {"status": "success", "trace_id": trace_id, "response": response}
         except Exception as e:
             traceback.print_exc()
             return {"status": "error", "response": f"Terjadi kesalahan pada sistem: {str(e)}"}
