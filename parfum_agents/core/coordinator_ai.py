@@ -20,6 +20,25 @@ def _load_prompt_template(filename: str) -> str:
             return f.read()
     return ""
 
+def _get_alternative_recommendations(exclude_id: str) -> str:
+    try:
+        conn = sqlite3.connect(config.DB_PATH)
+        c = conn.cursor()
+        c.execute("""
+            SELECT p.name, p.brand, i.size_ml, i.quantity_available, p.price_idr
+            FROM inventory i JOIN perfume_catalog p ON i.perfume_id = p.perfume_id
+            WHERE i.perfume_id != ? AND i.quantity_available >= 20
+            ORDER BY i.quantity_available DESC LIMIT 3
+        """, (exclude_id,))
+        rows = c.fetchall()
+        conn.close()
+        if rows:
+            lines = [f"• **{r[0]}** ({r[1]}) — {r[2]}ml: ready **{r[3]} botol** (Rp {r[4]:,.0f})".replace(",", ".") for r in rows]
+            return "\n".join(lines)
+    except Exception:
+        pass
+    return "• **Tom Ford Architecto Lumiere** (50ml): ready 120 botol\n• **Gucci Magnam** (100ml): ready 90 botol"
+
 def run(state: AgentState) -> dict:
     start_time       = time.time()
     user_input       = state.get("input", "")
@@ -315,24 +334,7 @@ def run(state: AgentState) -> dict:
         )
         return _respond_directly(start_time, msg)
 
-def _get_alternative_recommendations(exclude_id: str) -> str:
-    try:
-        conn = sqlite3.connect(config.DB_PATH)
-        c = conn.cursor()
-        c.execute("""
-            SELECT p.name, p.brand, i.size_ml, i.quantity_available, p.price_idr
-            FROM inventory i JOIN perfume_catalog p ON i.perfume_id = p.perfume_id
-            WHERE i.perfume_id != ? AND i.quantity_available >= 20
-            ORDER BY i.quantity_available DESC LIMIT 3
-        """, (exclude_id,))
-        rows = c.fetchall()
-        conn.close()
-        if rows:
-            lines = [f"• **{r[0]}** ({r[1]}) — {r[2]}ml: ready **{r[3]} botol** (Rp {r[4]:,.0f})".replace(",", ".") for r in rows]
-            return "\n".join(lines)
-    except Exception:
-        pass
-    return "• **Tom Ford Architecto Lumiere** (50ml): ready 120 botol\n• **Gucci Magnam** (100ml): ready 90 botol"
+
 
     if goal == "PURCHASE" and entities.get("product") and entities.get("size_ml") and entities.get("quantity"):
         prod = entities.get("product")
