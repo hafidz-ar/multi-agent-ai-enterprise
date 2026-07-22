@@ -16,10 +16,12 @@ def run(state: AgentState) -> dict:
     entities = semantic_frame.get("entities", {})
     context = state.get("conversation_context", {})
     resolved = state.get("resolved_entities", {})
+    tx_context = state.get("transaction_context", {})
     
-    product_name = entities.get("product") or context.get("current_product") or resolved.get("last_product")
-    requested_size = entities.get("size_ml") or context.get("current_variant") or resolved.get("last_variant")
-    
+    product_name = entities.get("product") or tx_context.get("product") or context.get("current_product") or resolved.get("last_product")
+    requested_size = entities.get("size_ml") or tx_context.get("size_ml") or context.get("current_variant") or resolved.get("last_variant")
+    qty = entities.get("quantity") or tx_context.get("qty") or 1
+
     if not product_name or product_name == "UNKNOWN_PRODUCT":
         res = {
             "execution_id": exec_id,
@@ -73,20 +75,12 @@ def run(state: AgentState) -> dict:
         perfume_id = prod[0]
         actual_name = prod[1]
         
-        if requested_size:
-            c.execute("""
-                SELECT i.size_ml, p.price_idr 
-                FROM inventory i 
-                JOIN perfume_catalog p ON i.perfume_id = p.perfume_id 
-                WHERE i.perfume_id = ? AND i.size_ml = ?
-            """, (perfume_id, requested_size))
-        else:
-            c.execute("""
-                SELECT i.size_ml, p.price_idr 
-                FROM inventory i 
-                JOIN perfume_catalog p ON i.perfume_id = p.perfume_id 
-                WHERE i.perfume_id = ?
-            """, (perfume_id,))
+        c.execute("""
+            SELECT i.size_ml, p.price_idr 
+            FROM inventory i 
+            JOIN perfume_catalog p ON i.perfume_id = p.perfume_id 
+            WHERE i.perfume_id = ?
+        """, (perfume_id,))
         rows = c.fetchall()
         conn.close()
         
@@ -104,6 +98,9 @@ def run(state: AgentState) -> dict:
                 calc_price = int(base_price * (size / 100.0))
             prices[f"{size}ml"] = calc_price
             
+        unit_price = prices.get(f"{requested_size}ml", 0) if requested_size else (prices.get("100ml", 0) or prices.get("50ml", 0))
+        total_price = unit_price * qty
+
         latency = (time.time() - start_time) * 1000
         
         res = {
@@ -115,7 +112,9 @@ def run(state: AgentState) -> dict:
             "developer_message": "Prices fetched successfully via JOIN.",
             "payload": {
                 "product": actual_name,
-                "prices": prices
+                "prices": prices,
+                "unit_price": unit_price,
+                "total_price": total_price
             }
         }
         

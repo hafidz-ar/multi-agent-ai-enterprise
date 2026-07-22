@@ -36,6 +36,73 @@ def get_perfume_catalog():
 
 
 # ---------------------------------------------------------------------------
+# Generic Unified Entity Extractor
+# ---------------------------------------------------------------------------
+
+def extract_entities(text: str, catalog: list) -> dict:
+    """
+    Generic Unified Entity Extractor.
+    Extracts all possible domain entities (product, size_ml, quantity, payment_method, period)
+    from user input in a single unified pass, independent of pending slots or current FSM state.
+    """
+    entities = {
+        "product": None,
+        "size_ml": None,
+        "quantity": None,
+        "period": None,
+        "payment_method": None
+    }
+
+    # 1. Product
+    prod = _extract_product_from_catalog(text, catalog)
+    if prod:
+        entities["product"] = prod
+
+    # 2. Size ML
+    size = _extract_size_ml(text)
+    if size:
+        entities["size_ml"] = size
+    elif any(w in text.lower() for w in ["besar", "large", "gede"]):
+        entities["size_ml"] = 100
+    elif any(w in text.lower() for w in ["kecil", "small", "mini"]):
+        entities["size_ml"] = 50
+
+    # 3. Quantity
+    qty = _extract_quantity(text)
+    if qty is None:
+        # Strip out size_ml patterns (e.g. 50ml) so we don't misinterpret "50ml" as qty=50
+        clean_text = re.sub(r"\b\d{2,3}\s*ml\b", "", text.lower())
+        m = re.search(r"\b(\d+)\s*(pcs?|piece|botol|unit)?\b", clean_text)
+        if m:
+            val = int(m.group(1))
+            if val < 1000:
+                qty = val
+        if qty is None:
+            word_map = {"satu": 1, "dua": 2, "tiga": 3, "empat": 4, "lima": 5,
+                        "enam": 6, "tujuh": 7, "delapan": 8, "sembilan": 9, "sepuluh": 10}
+            for word, num in word_map.items():
+                if word in clean_text:
+                    qty = num
+                    break
+    if qty:
+        entities["quantity"] = qty
+
+    # 4. Payment Method
+    payment = _extract_payment(text)
+    if payment:
+        entities["payment_method"] = payment.upper()
+
+    # 5. Period
+    period_data = _extract_period_with_range(text)
+    if period_data:
+        entities["period"] = period_data["label"]
+        entities["start_date"] = period_data["start_date"]
+        entities["end_date"] = period_data["end_date"]
+
+    return entities
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -67,16 +134,17 @@ def run(state: AgentState) -> dict:
         return {**_wrap(locked), "resolved_entities": resolved}
 
     # ------------------------------------------------------------------ #
-    # Layer 1 — Pending slot filling (deterministic, no LLM)              #
+    # Layer 1 — Pending slot filling (with Generic Entity Extraction)     #
     # ------------------------------------------------------------------ #
     if pending:
         slot_frame = _fill_pending_slot(input_text, pending, resolved, conv_ctx, catalog)
         if slot_frame:
             _update_resolved_entities(slot_frame, resolved)
-            return {**_wrap(slot_frame), "resolved_entities": resolved, "pending_slot": ""}
+            pending_out = "" if not slot_frame.get("ambiguities") else pending
+            return {**_wrap(slot_frame), "resolved_entities": resolved, "pending_slot": pending_out}
 
     # ------------------------------------------------------------------ #
-    # Layer 2 — Deterministic coreference resolver (no LLM)               #
+    # Layer 2 — Deterministic coreference resolver                        #
     # ------------------------------------------------------------------ #
     coref_frame = _deterministic_coreref_resolver(input_text, resolved, conv_ctx, catalog)
     if coref_frame:
@@ -84,7 +152,7 @@ def run(state: AgentState) -> dict:
         return {**_wrap(coref_frame), "resolved_entities": resolved}
 
     # ------------------------------------------------------------------ #
-    # Layer 3 — Rule-based extraction                                      #
+    # Layer 3 — Rule-based extraction (Generic Entity Extractor)          #
     # ------------------------------------------------------------------ #
     rule_frame = _semantic_frame_from_rules(input_text, catalog)
     if rule_frame:
@@ -92,7 +160,7 @@ def run(state: AgentState) -> dict:
         return {**_wrap(rule_frame), "resolved_entities": resolved}
 
     # ------------------------------------------------------------------ #
-    # Layer 4 — LLM fallback (only when rules cannot determine intent)     #
+    # Layer 4 — LLM fallback                                              #
     # ------------------------------------------------------------------ #
     llm_frame = _llm_fallback(input_text, conv_ctx, tx_ctx, resolved, history, catalog, start_time)
     if llm_frame:
@@ -148,49 +216,30 @@ def _semantic_frame_from_active_context(input_text: str, conv_ctx: dict, tx_ctx:
 
 
 # ---------------------------------------------------------------------------
-# Layer 1 — Pending slot filling
+# Layer 1 — Pending slot filling using Generic Entity Extractor
 # ---------------------------------------------------------------------------
 
 def _fill_pending_slot(input_text: str, pending: str, resolved: dict, conv_ctx: dict, catalog: list):
     text     = input_text.strip().lower()
     goal     = conv_ctx.get("conversation_goal") or resolved.get("last_goal") or "PURCHASE"
-    product  = resolved.get("last_product") or conv_ctx.get("current_product")
-    size_ml  = resolved.get("last_variant")  or conv_ctx.get("current_variant")
 
-    if pending == "size_ml":
-        size = _extract_size_ml(text)
-        if size:
-            return _make_purchase_or_goal_frame(goal, product, size, None, catalog)
+    extracted = extract_entities(input_text, catalog)
 
-        if any(w in text for w in ["besar", "large", "gede"]):
-            return _make_purchase_or_goal_frame(goal, product, 100, None, catalog)
-        if any(w in text for w in ["kecil", "small"]):
-            return _make_purchase_or_goal_frame(goal, product, 50, None, catalog)
+    product  = extracted.get("product") or resolved.get("last_product") or conv_ctx.get("current_product")
+    size_ml  = extracted.get("size_ml") or resolved.get("last_variant") or conv_ctx.get("current_variant")
+    quantity = extracted.get("quantity") or resolved.get("last_quantity") or conv_ctx.get("current_quantity")
+    payment  = extracted.get("payment_method") or resolved.get("last_payment")
 
-    elif pending == "quantity":
-        qty = _extract_quantity(text)
-        if qty is None:
-            m = re.search(r"\b(\d+)\b", text)
-            qty = int(m.group(1)) if m else None
-        word_map = {"satu": 1, "dua": 2, "tiga": 3, "empat": 4, "lima": 5,
-                    "enam": 6, "tujuh": 7, "delapan": 8, "sembilan": 9, "sepuluh": 10}
-        for word, num in word_map.items():
-            if word in text:
-                qty = num
-                break
-        if qty:
-            return _make_purchase_or_goal_frame(goal, product, size_ml, qty, catalog)
+    if goal in ["PURCHASE", "RESTOCK"]:
+        frame = _make_purchase_or_goal_frame(goal, product, size_ml, quantity, catalog)
+        if payment:
+            frame["entities"]["payment_method"] = payment
+        return frame
 
-    elif pending == "product":
-        prod = _extract_product_from_catalog(text, catalog)
-        if prod:
-            return _make_purchase_or_goal_frame(goal, prod, size_ml, None, catalog)
-
-    elif pending == "period":
+    if pending == "period" or goal == "REPORT_CHECK":
         period_data = _extract_period_with_range(text)
         if period_data:
-            frame = _make_frame("REPORT_CHECK", intent="CHECK_REPORT",
-                                ops=["CHECK_REPORT"])
+            frame = _make_frame("REPORT_CHECK", intent="CHECK_REPORT", ops=["CHECK_REPORT"])
             frame["entities"]["period"]     = period_data["label"]
             frame["entities"]["start_date"] = period_data["start_date"]
             frame["entities"]["end_date"]   = period_data["end_date"]
@@ -259,36 +308,34 @@ def _deterministic_coreref_resolver(input_text: str, resolved: dict, conv_ctx: d
     size_ml = resolved.get("last_variant")  or conv_ctx.get("current_variant")
     goal    = conv_ctx.get("conversation_goal")
 
-    size_only = _extract_size_ml(text)
-    has_product_in_text = bool(_extract_product_from_catalog(text, catalog))
+    extracted = extract_entities(input_text, catalog)
+    size_only = extracted.get("size_ml")
+    has_product_in_text = bool(extracted.get("product"))
+
     if size_only and not has_product_in_text and product:
         inferred_goal = goal if goal in ["PURCHASE", "PRICE_CHECK", "STOCK_CHECK", "RESTOCK"] else "PRICE_CHECK"
-        return _make_purchase_or_goal_frame(inferred_goal, product, size_only, None, catalog)
+        return _make_purchase_or_goal_frame(inferred_goal, product, size_only, extracted.get("quantity"), catalog)
 
     has_coref = any(re.search(p, text) for p in _COREF_PRODUCT_PATTERNS)
     if has_coref and product:
-        override_size = _extract_size_ml(text) or size_ml
-        for key, val in _SIZE_SHORTCUTS.items():
-            if key in text:
-                override_size = val
-                break
+        override_size = extracted.get("size_ml") or size_ml
         inferred_goal = goal if goal in ["PURCHASE", "PRICE_CHECK", "STOCK_CHECK", "RESTOCK"] else "PRICE_CHECK"
-        return _make_purchase_or_goal_frame(inferred_goal, product, override_size, None, catalog)
+        return _make_purchase_or_goal_frame(inferred_goal, product, override_size, extracted.get("quantity"), catalog)
 
     price_q_patterns = [r"\bharganya\b", r"\bberapa harga\b", r"\bharga(?:nya)?\b"]
     if product and any(re.search(p, text) for p in price_q_patterns) and not has_product_in_text:
-        override_size = _extract_size_ml(text) or size_ml
+        override_size = extracted.get("size_ml") or size_ml
         return _make_purchase_or_goal_frame("PRICE_CHECK", product, override_size, None, catalog)
 
     stock_q_patterns = [r"\bstoknya\b", r"\bstok(?:nya)?\s+ada\b", r"\bada\s+stok\b"]
     if product and any(re.search(p, text) for p in stock_q_patterns) and not has_product_in_text:
-        override_size = _extract_size_ml(text) or size_ml
+        override_size = extracted.get("size_ml") or size_ml
         return _make_purchase_or_goal_frame("STOCK_CHECK", product, override_size, None, catalog)
 
     buy_patterns = [r"\bbeli\b", r"\border\b", r"\bpesan\b", r"\blanjut\s+beli\b", r"\boke\s+beli\b"]
     if product and any(re.search(p, text) for p in buy_patterns) and not has_product_in_text:
-        override_size = _extract_size_ml(text) or size_ml
-        qty = _extract_quantity(text)
+        override_size = extracted.get("size_ml") or size_ml
+        qty = extracted.get("quantity")
         ambigs = []
         if not override_size: ambigs.append("size_ml")
         if not qty: ambigs.append("quantity")
@@ -297,39 +344,18 @@ def _deterministic_coreref_resolver(input_text: str, resolved: dict, conv_ctx: d
             "intent": "BUY_PRODUCT",
             "entities": {
                 "product": product, "size_ml": override_size,
-                "quantity": qty or 1, "period": None, "payment_method": None
+                "quantity": qty or 1, "period": None, "payment_method": extracted.get("payment_method")
             },
             "requested_operations": ["CHECK_STOCK"],
             "confidence": 0.95,
             "ambiguities": ambigs
         }
 
-    for key, val in _SIZE_SHORTCUTS.items():
-        if key in text and product:
-            inferred_goal = goal if goal in ["PURCHASE", "PRICE_CHECK", "STOCK_CHECK"] else "PRICE_CHECK"
-            return _make_purchase_or_goal_frame(inferred_goal, product, val, None, catalog)
-
-    if goal == "PURCHASE":
-        number_match = re.fullmatch(r"\s*(\d+)\s*(pcs?|piece|botol|unit)?\s*", text)
-        if number_match:
-            qty = int(number_match.group(1))
-            if qty < 1000:
-                return _make_purchase_or_goal_frame("PURCHASE", product, size_ml, qty, catalog)
-
-    if goal == "REPORT_CHECK":
-        period_data = _extract_period_with_range(text)
-        if period_data:
-            frame = _make_frame("REPORT_CHECK", intent="CHECK_REPORT", ops=["CHECK_REPORT"])
-            frame["entities"]["period"]     = period_data["label"]
-            frame["entities"]["start_date"] = period_data["start_date"]
-            frame["entities"]["end_date"]   = period_data["end_date"]
-            return frame
-
     return None
 
 
 # ---------------------------------------------------------------------------
-# Layer 3 — Rule-based extraction
+# Layer 3 — Rule-based extraction (Generic Entity Extractor)
 # ---------------------------------------------------------------------------
 
 def _semantic_frame_from_rules(input_text: str, catalog: list):
@@ -366,11 +392,12 @@ def _semantic_frame_from_rules(input_text: str, catalog: list):
     if not goal:
         return None
 
-    product    = _extract_product_from_catalog(text, catalog)
-    size_ml    = _extract_size_ml(text)
-    quantity   = _extract_quantity(text)
+    extracted = extract_entities(input_text, catalog)
+    product   = extracted.get("product")
+    size_ml   = extracted.get("size_ml")
+    quantity  = extracted.get("quantity")
+    payment   = extracted.get("payment_method")
     period_data = _extract_period_with_range(text)
-    payment    = _extract_payment(text)
     ambiguities = []
 
     if goal in ["PURCHASE", "RESTOCK"]:
@@ -449,21 +476,11 @@ ATURAN PEMETAAN GOAL:
 | PAYMENT_METHOD | []                                                      |
 | UNKNOWN        | []                                                      |
 
-ATURAN RESOLUSI KONTEKS (PENTING!):
-1. Jika user menyebut ukuran saja (misal "50ml", "yang 100ml") dan ada produk terakhir di konteks → gunakan produk terakhir.
-2. Jika user menyebut "yang itu", "itu", "tadi" → gunakan produk + ukuran dari konteks.
-3. Jika user menanya harga/stok tanpa produk → gunakan produk dari konteks.
-4. Jika user mengetik angka saja (misal "2", "3 botol") dan goal sebelumnya PURCHASE/RESTOCK → itu adalah quantity.
-5. Jika user mengetik "lanjut", "oke", "ya" setelah penawaran → CONFIRM.
-
-EKSTRAKSI ENTITAS:
-- period: "hari ini", "kemarin", "minggu ini", "bulan ini", "tahun ini", "minggu lalu", "bulan lalu" (jika ada kata waktu)
+EKSTRAKSI ENTITAS SIMULTAN:
+Ekstrak SELURUH entitas yang ada di teks user tanpa terbatas pada slot yang sedang ditunggu.
+- size_ml: integer (30, 50, 100)
+- quantity: integer (jumlah botol)
 - payment_method: "tunai", "transfer", "qris", "gopay", "ovo"
-
-AMBIGUITIES — wajib diisi HANYA jika:
-- goal=PURCHASE dan product belum ada (dan tidak ada di konteks) → tambah "product"
-- goal=PURCHASE dan size_ml belum ada dan tidak bisa diinfer → tambah "size_ml"
-- goal=REPORT_CHECK dan period belum ada → tambah "period"
 
 Input User: "{input_text}"
 
@@ -490,7 +507,6 @@ Format output JSON:
 
         semantic_frame = json.loads(response.content)
 
-        # Post-processing validation
         ambiguities = semantic_frame.setdefault("ambiguities", [])
         entities    = semantic_frame.setdefault("entities", {})
         goal        = semantic_frame.get("goal", "UNKNOWN")
@@ -499,7 +515,12 @@ Format output JSON:
         entities = semantic_frame.setdefault("entities", {})
         goal     = semantic_frame.get("goal", "UNKNOWN")
 
-        # Product validation against catalog
+        # Merge generic extracted entities
+        extracted = extract_entities(input_text, catalog)
+        for k, v in extracted.items():
+            if v and not entities.get(k):
+                entities[k] = v
+
         product = entities.get("product")
         if product:
             matched = _match_product_to_catalog(product, catalog)
@@ -510,7 +531,6 @@ Format output JSON:
                 if "product" not in ambiguities:
                     ambiguities.append("product")
 
-        # Mandatory field validation
         if goal in ["PURCHASE", "RESTOCK"] and (not entities.get("product") or entities.get("product") == "UNKNOWN_PRODUCT"):
             if "product" not in ambiguities:
                 ambiguities.append("product")
@@ -524,7 +544,6 @@ Format output JSON:
             if "period" not in ambiguities:
                 ambiguities.append("period")
 
-        # Enrich period with date range if not yet set
         if entities.get("period") and not entities.get("start_date"):
             period_data = _extract_period_with_range(entities["period"])
             if period_data:
@@ -550,7 +569,7 @@ Format output JSON:
 # ---------------------------------------------------------------------------
 
 def _extract_product_from_catalog(text: str, catalog: list):
-    compact = re.sub(r"[^a-z0-9]+", " ", text).strip()
+    compact = re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
     for product in catalog:
         if product.lower() in compact:
             return product
@@ -572,18 +591,18 @@ def _match_product_to_catalog(product: str, catalog: list):
 
 
 def _extract_size_ml(text: str):
-    match = re.search(r"\b(\d{2,3})\s*ml\b", text)
+    match = re.search(r"\b(\d{2,3})\s*ml\b", text.lower())
     return int(match.group(1)) if match else None
 
 
 def _extract_quantity(text: str):
-    match = re.search(r"\b(\d+)\s*(pcs?|piece|botol|unit)\b", text)
+    match = re.search(r"\b(\d+)\s*(pcs?|piece|botol|unit)\b", text.lower())
     return int(match.group(1)) if match else None
 
 
 def _extract_payment(text: str):
     for method in ["tunai", "cash", "transfer", "bca", "qris", "gopay", "ovo", "mandiri"]:
-        if method in text:
+        if method in text.lower():
             return method
     return None
 
@@ -625,7 +644,7 @@ def _extract_period_with_range(text: str) -> dict | None:
     ]
 
     for keywords, label, start, end in mappings:
-        if any(kw in text for kw in keywords):
+        if any(kw in text.lower() for kw in keywords):
             return {
                 "label":      label,
                 "start_date": iso(start) if start else None,
@@ -654,6 +673,8 @@ def _update_resolved_entities(frame: dict, resolved: dict):
         resolved["last_product"] = entities["product"]
     if entities.get("size_ml"):
         resolved["last_variant"] = entities["size_ml"]
+    if entities.get("quantity"):
+        resolved["last_quantity"] = entities["quantity"]
     if entities.get("period"):
         resolved["last_period"] = entities["period"]
     if entities.get("payment_method"):

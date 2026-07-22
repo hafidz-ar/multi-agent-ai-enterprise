@@ -23,6 +23,12 @@ def run(state: AgentState) -> dict:
     import datetime
     import config
     
+    remaining_stock = 0
+    unit_price = 0
+    total_price = 0
+    invoice_no = f"INV-{datetime.datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4().hex[:4]).upper()}"
+    p_name = tx_context.get("product", "Parfum")
+    
     try:
         conn = sqlite3.connect(config.DB_PATH)
         c = conn.cursor()
@@ -48,7 +54,7 @@ def run(state: AgentState) -> dict:
                 
             total_price = unit_price * qty
             
-            tx_id = tx_context.get("transaction_id", f"TX-M-{uuid.uuid4().hex[:8]}")
+            tx_id = tx_context.get("transaction_id", invoice_no)
             today = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             c.execute("""
                 INSERT INTO sales_history (
@@ -75,6 +81,7 @@ def run(state: AgentState) -> dict:
                 return _error_response(exec_id, start_time, tx_context, 
                     f"Stok {p_name} {size_ml}ml tidak mencukupi (tersisa {current_stock} pcs, diminta {qty} pcs).")
             
+            remaining_stock = current_stock - qty
             c.execute("""
                 UPDATE inventory 
                 SET quantity_available = quantity_available - ? 
@@ -90,16 +97,27 @@ def run(state: AgentState) -> dict:
         if 'conn' in locals(): conn.close()
     
     tx_context["status"] = "COMPLETED"
+    tx_context["invoice_no"] = invoice_no
+    tx_context["unit_price"] = unit_price
+    tx_context["subtotal"] = total_price
+    tx_context["remaining_stock"] = remaining_stock
     
     res = {
         "execution_id": exec_id,
         "service_name": "OrderService",
         "result_type": ResultType.SUCCESS,
         "severity": Severity.INFO,
-        "user_message": f"Pesanan Anda untuk {tx_context.get('product', 'Parfum')} sebanyak {tx_context.get('qty', 1)} pcs dengan metode pembayaran {payment_method.capitalize()} telah berhasil dibuat! Terima kasih telah berbelanja di Parfum Enterprise.",
+        "user_message": f"Pesanan Anda untuk {p_name} ({tx_context.get('size_ml')}ml) sebanyak {tx_context.get('qty', 1)} botol telah berhasil dibuat dengan nomor transaksi {invoice_no}.",
         "developer_message": "Order created and payment recorded successfully.",
         "payload": {
-            "transaction_id": tx_context.get("transaction_id"),
+            "transaction_id": invoice_no,
+            "product": p_name,
+            "size_ml": tx_context.get("size_ml"),
+            "qty": tx_context.get("qty"),
+            "unit_price": unit_price,
+            "total_price": total_price,
+            "payment_method": payment_method,
+            "remaining_stock": remaining_stock,
             "status": "COMPLETED"
         }
     }

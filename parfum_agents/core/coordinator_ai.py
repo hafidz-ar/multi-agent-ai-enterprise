@@ -7,26 +7,23 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
+from parfum_agents.tools.utils import log_evaluation
 from models import AgentState, ResultType
-from parfum_agents.nlu.nlu_service import _build_history_prompt
-
-COORDINATOR_CONTEXT_WINDOW = 8  # last N history messages included in LLM context
 
 def _load_prompt_template(filename: str) -> str:
-    prompt_path = os.path.join(config.BASE_DIR, "prompts", filename)
-    if os.path.exists(prompt_path):
-        with open(prompt_path, "r", encoding="utf-8") as f:
-            return f.read().strip()
+    path = os.path.join(config.PROMPTS_DIR, filename)
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
     return ""
 
 def run(state: AgentState) -> dict:
-    start_time = time.time()
-
+    start_time       = time.time()
     user_input       = state.get("input", "")
-    services_results = state.get("services_results", [])
-    planner_status   = state.get("planner_status", "")
+    planner_status   = state.get("planner_status", "READY")
     semantic_frame   = state.get("semantic_frame", {})
     ambiguities      = semantic_frame.get("ambiguities", [])
+    services_results = state.get("services_results", [])
     goal             = semantic_frame.get("goal", "UNKNOWN")
     entities         = semantic_frame.get("entities", {})
 
@@ -42,22 +39,46 @@ def run(state: AgentState) -> dict:
     # 0. Penanganan FSM Transaction State
     if wf_state == "WAITING_USER_INPUT":
         if tx_context.get("status") == "WAITING_CONFIRMATION":
-            inv_msg = None
-            for res in services_results:
-                if res.get("service_name") == "InventoryService" and res.get("user_message"):
-                    inv_msg = res.get("user_message")
+            unit_price_fmt = None
+            subtotal_fmt = None
+            total_avail = None
             
-            if not inv_msg:
-                product = tx_context.get("product", "Produk")
-                size = tx_context.get("size_ml", "")
-                qty = tx_context.get("qty", 1)
-                size_str = f" {size}ml" if size else ""
-                inv_msg = f"Stok {product}{size_str} sebanyak {qty} pcs tersedia."
-                
-            return _respond_directly(start_time, f"{inv_msg} Apakah Anda ingin melanjutkan pembelian?")
+            product_name = tx_context.get("product", "Produk")
+            size_ml = tx_context.get("size_ml", 50)
+            qty = tx_context.get("qty", 1)
+
+            for res in services_results:
+                if res.get("service_name") == "PricingService":
+                    payload = res.get("payload", {})
+                    prices = payload.get("prices", {})
+                    unit_price = payload.get("unit_price") or prices.get(f"{size_ml}ml", 0)
+                    total_price = payload.get("total_price") or (unit_price * qty)
+                    if unit_price:
+                        unit_price_fmt = f"Rp {unit_price:,.0f}".replace(",", ".")
+                        subtotal_fmt = f"Rp {total_price:,.0f}".replace(",", ".")
+                elif res.get("service_name") == "InventoryService":
+                    payload = res.get("payload", {})
+                    total_avail = payload.get("total_available", 0)
+
+            if unit_price_fmt and subtotal_fmt:
+                msg = (
+                    f"Saya menemukan produk yang Anda pilih.\n\n"
+                    f"**Ringkasan Pesanan**\n"
+                    f"• Produk: {product_name}\n"
+                    f"• Ukuran: {size_ml}ml\n"
+                    f"• Jumlah: {qty} botol\n"
+                    f"• Harga satuan: {unit_price_fmt}\n"
+                    f"• Subtotal: {subtotal_fmt}\n"
+                    f"• Stok tersedia: {total_avail if total_avail is not None else 'Tersedia'} botol\n\n"
+                    f"Apakah Anda ingin melanjutkan ke pembayaran?"
+                )
+            else:
+                msg = f"Stok {product_name} {size_ml}ml tersedia. Apakah Anda ingin melanjutkan ke pembayaran?"
+
+            return _respond_directly(start_time, msg)
             
         elif tx_context.get("status") == "WAITING_PAYMENT":
-            return _respond_directly(start_time, "Baik, silakan pilih metode pembayaran (misal: Tunai, Transfer, atau QRIS).")
+            return _respond_directly(start_time, "Silakan pilih metode pembayaran:\n• Tunai\n• Transfer\n• QRIS")
             
     if wf_state == "CANCELLED":
         if event == "TIMEOUT":
@@ -66,15 +87,37 @@ def run(state: AgentState) -> dict:
             return _respond_directly(start_time, "Baik, pesanan Anda telah dibatalkan. Ada lagi yang bisa saya bantu?")
             
     if wf_state == "COMPLETED":
-        order_success = False
         for res in services_results:
             if res.get("service_name") == "OrderService" and res.get("result_type") == ResultType.SUCCESS:
-                order_success = True
-                if res.get("user_message"):
-                    return _respond_directly(start_time, res["user_message"])
+                payload = res.get("payload", {})
+                inv_no = payload.get("transaction_id", tx_context.get("invoice_no", "INV-20260722-0001"))
+                p_name = payload.get("product", tx_context.get("product", "Parfum"))
+                s_ml = payload.get("size_ml", tx_context.get("size_ml", 50))
+                q_val = payload.get("qty", tx_context.get("qty", 1))
+                u_price = payload.get("unit_price", tx_context.get("unit_price", 0))
+                tot_price = payload.get("total_price", tx_context.get("subtotal", 0))
+                pay_method = payload.get("payment_method", tx_context.get("payment_method", "Tunai")).capitalize()
+                rem_stock = payload.get("remaining_stock", tx_context.get("remaining_stock", 0))
+
+                u_price_fmt = f"Rp {u_price:,.0f}".replace(",", ".") if u_price else "Rp 0"
+                tot_price_fmt = f"Rp {tot_price:,.0f}".replace(",", ".") if tot_price else "Rp 0"
+
+                receipt_msg = (
+                    f"✅ Pembelian berhasil diproses.\n\n"
+                    f"**Detail Transaksi**\n"
+                    f"• Produk: {p_name}\n"
+                    f"• Ukuran: {s_ml}ml\n"
+                    f"• Jumlah: {q_val} botol\n"
+                    f"• Harga satuan: {u_price_fmt}\n"
+                    f"• Total pembayaran: {tot_price_fmt}\n"
+                    f"• Metode pembayaran: {pay_method}\n"
+                    f"• Nomor transaksi: {inv_no}\n"
+                    f"• Sisa stok: {rem_stock} botol\n\n"
+                    f"Terima kasih telah berbelanja di Parfum Enterprise."
+                )
+                return _respond_directly(start_time, receipt_msg)
                     
-        if order_success:
-            return _respond_directly(start_time, "Pesanan Anda berhasil dibuat dan status transaksi selesai.")
+        return _respond_directly(start_time, "Pesanan Anda berhasil dibuat dan status transaksi selesai.")
         
     # 1. Khusus CLARIFICATION_REQUIRED
     if planner_status == "CLARIFICATION_REQUIRED":
@@ -98,151 +141,14 @@ def run(state: AgentState) -> dict:
             "Silakan ketik pertanyaan Anda!"
         )
 
+    if goal == "GREETING":
+        return _respond_directly(start_time, "Halo! Selamat datang di Parfum Enterprise AI Assistant. Ada yang bisa saya bantu terkait katalog, stok, harga, atau pembelian hari ini?")
+
     if not services_results:
-        return _handle_no_service(state, user_input, goal, ambiguities, start_time)
+        return _handle_fallback(state, user_input, goal, entities, start_time)
 
-    # 3. Bangun data aman untuk LLM
-    safe_service_data = [
-        {
-            "service": s.get("service_name"),
-            "status": s.get("result_type") or ("SUCCESS" if s.get("success") else "ERROR"),
-            "message": s.get("user_message"),
-            "data": s.get("data") if "data" in s else s.get("payload")
-        }
-        for s in services_results
-    ]
-
-    try:
-        llm = ChatGroq(
-            model=config.LLM_MODEL,
-            api_key=config.GROQ_API_KEY,
-            temperature=0.3
-        )
-
-        history     = state.get("conversation_history", [])
-        history_str = _build_history_prompt(history, limit=COORDINATOR_CONTEXT_WINDOW)
-        prompt_content = _load_prompt_template("coordinator.txt") or """Kamu adalah asisten toko parfum yang profesional. Jawab pertanyaan berdasarkan DATA TRANSAKSI."""
-
-        system_msg = SystemMessage(content=prompt_content)
-        data_str = json.dumps(safe_service_data, indent=2, ensure_ascii=False)
-        ambiguities_str = f"Informasi yang masih kurang dari pelanggan: {ambiguities}" if ambiguities else ""
-        goal_str = f"Tujuan pelanggan: {goal}"
-
-        history_section = f"\nRiwayat Percakapan:\n{history_str}\n" if history_str else ""
-        human_msg = HumanMessage(content=f"""Pertanyaan pelanggan: "{user_input}"
-{goal_str}
-{history_section}
-Data dari sistem:
-{data_str}
-
-{ambiguities_str}
-
-Jawab pertanyaan pelanggan di atas berdasarkan data dari sistem. Sesuaikan nada dengan tujuan pelanggan.""")
-
-        response = llm.invoke([system_msg, human_msg])
-        final_text = response.content.strip()
-
-        latency = (time.time() - start_time) * 1000
-        return {
-            "final_response": final_text,
-            "_metrics": {
-                "agent": "CoordinatorAI",
-                "latency_ms": latency,
-                "decision": "Respond User",
-                "status": "OK"
-            }
-        }
-
-    except Exception as e:
-        latency = (time.time() - start_time) * 1000
-        return {
-            "final_response": f"Maaf, saat ini sistem sedang mengalami gangguan. Error: {str(e)}",
-            "_metrics": {
-                "agent": "CoordinatorAI",
-                "latency_ms": latency,
-                "decision": "Error (LLM Crash)",
-                "status": "ERROR"
-            }
-        }
-
-def _get_catalog_context_for_prompt():
-    try:
-        import sqlite3
-        conn = sqlite3.connect(config.DB_PATH)
-        c = conn.cursor()
-        c.execute("SELECT name, brand, category, gender, price_idr FROM perfume_catalog ORDER BY brand ASC LIMIT 25")
-        rows = c.fetchall()
-        conn.close()
-        lines = []
-        for r in rows:
-            lines.append(f"- {r[0]} (Brand: {r[1]}, Kategori: {r[2]}, Gender: {r[3]}, Rp{r[4]:,})")
-        return "\n".join(lines)
-    except Exception:
-        return "- Tom Ford Itaque Intense\n- YSL Est Aqua\n- Chanel Hic Noir\n- Dior Architecto Noir\n- Le Labo Porro Noir"
-
-def _handle_no_service(state, user_input, goal, ambiguities, start_time):
-    conv_ctx    = state.get("conversation_context", {})
-    has_greeted = conv_ctx.get("has_greeted", False)
-    history     = state.get("conversation_history", [])
-    history_str = _build_history_prompt(history, limit=COORDINATOR_CONTEXT_WINDOW)
-    catalog_str = _get_catalog_context_for_prompt()
-
-    try:
-        llm = ChatGroq(
-            model=config.LLM_MODEL,
-            api_key=config.GROQ_API_KEY,
-            temperature=0.3
-        )
-        greeting_rule = (
-            "Jangan memulai dengan sapaan 'Halo' atau 'Selamat datang' "
-            "karena pelanggan sudah pernah disambut sebelumnya."
-            if has_greeted else
-            "Sambut pelanggan dengan hangat dan wajar sebagai AI Assistant resmi Parfum Enterprise."
-        )
-        history_section = f"\nRiwayat Percakapan:\n{history_str}" if history_str else ""
-        template = _load_prompt_template("recommendation.txt") or ""
-
-        system_msg = SystemMessage(content=f"""Kamu adalah AI Assistant resmi toko Parfum Enterprise.
-{greeting_rule}
-
-BATASAN DAN ATURAN SISTEM KETAT:
-1. KATALOG RESMI PARFUM ENTERPRISE:
-{catalog_str}
-
-{template}""")
-
-        human_msg = HumanMessage(content=f"Pelanggan berkata: \"{user_input}\"{history_section}")
-
-        response   = llm.invoke([system_msg, human_msg])
-        final_text = response.content.strip()
-
-        latency = (time.time() - start_time) * 1000
-        return {
-            "final_response": final_text,
-            "_metrics": {
-                "agent":    "CoordinatorAI",
-                "latency_ms": latency,
-                "decision": "Greeting/General",
-                "status":   "OK"
-            }
-        }
-
-    except Exception:
-        latency = (time.time() - start_time) * 1000
-        fallback = (
-            "Ada lagi yang bisa saya bantu? Saya bisa cek harga, stok parfum, atau membuat laporan penjualan."
-            if has_greeted else
-            "Halo! Ada yang bisa saya bantu hari ini? Saya bisa membantu cek harga, stok parfum, atau membuat laporan penjualan."
-        )
-        return {
-            "final_response": fallback,
-            "_metrics": {
-                "agent":    "CoordinatorAI",
-                "latency_ms": latency,
-                "decision": "Greeting (Fallback)",
-                "status":   "OK"
-            }
-        }
+    # 3. Ada service data ➔ LLM Synthesizer
+    return _synthesize_with_llm(state, user_input, goal, entities, services_results, start_time)
 
 def _handle_clarification(state, user_input, goal, entities, ambiguities, start_time):
     context = state.get("conversation_context", {})
@@ -255,8 +161,18 @@ def _handle_clarification(state, user_input, goal, entities, ambiguities, start_
     size_ml    = entities.get("size_ml")  or context.get("current_variant")
     quantity   = entities.get("quantity")
 
+    if product != "belum diketahui" and not size_ml and not quantity:
+        msg = (
+            f"Baik, Anda ingin membeli **{product}**.\n\n"
+            f"Silakan pilih:\n"
+            f"• Ukuran: 50ml atau 100ml\n"
+            f"• Jumlah botol yang diinginkan."
+        )
+        return _respond_directly(start_time, msg)
+
     if product != "belum diketahui" and size_ml and ("quantity" in ambiguities or not quantity):
-        return _respond_directly(start_time, f"Stok {product} {size_ml}ml tersedia. Berapa botol/pcs yang ingin Anda beli sebelum melanjutkan ke pembayaran?")
+        msg = f"Stok {product} {size_ml}ml tersedia. Berapa botol/pcs yang ingin Anda beli sebelum melanjutkan ke pembayaran?"
+        return _respond_directly(start_time, msg)
 
     missing_info = []
     if "product" in ambiguities:
@@ -305,6 +221,78 @@ Tanyakan informasi ini kepada pelanggan secara sopan.""")
             }
         }
 
+def _synthesize_with_llm(state, user_input, goal, entities, services_results, start_time):
+    try:
+        llm = ChatGroq(
+            model=config.LLM_MODEL,
+            api_key=config.GROQ_API_KEY,
+            temperature=0.4
+        )
+        template = _load_prompt_template("coordinator.txt") or "Kamu adalah AI Assistant toko parfum enterprise."
+        
+        results_str = json.dumps(services_results, indent=2)
+        system_msg  = SystemMessage(content=template)
+        human_msg   = HumanMessage(content=f"""Pertanyaan User: "{user_input}"
+Hasil Data dari Specialist Agents:
+{results_str}
+
+Sintesiskan jawaban final yang ramah, profesional, dan to the point untuk pelanggan.""")
+
+        response   = llm.invoke([system_msg, human_msg])
+        final_text = response.content.strip()
+
+        latency = (time.time() - start_time) * 1000
+        return {
+            "final_response": final_text,
+            "_metrics": {
+                "agent":    "CoordinatorAI",
+                "latency_ms": latency,
+                "decision": "Synthesize Response",
+                "status":   "OK"
+            }
+        }
+    except Exception:
+        fallback_msg = services_results[0].get("user_message", "Permintaan Anda telah diproses.")
+        return _respond_directly(start_time, fallback_msg)
+
+def _handle_fallback(state, user_input, goal, entities, start_time):
+    try:
+        llm = ChatGroq(
+            model=config.LLM_MODEL,
+            api_key=config.GROQ_API_KEY,
+            temperature=0.5
+        )
+        system_msg = SystemMessage(content="Kamu adalah AI Assistant toko parfum yang ramah.")
+        human_msg  = HumanMessage(content=user_input)
+
+        response   = llm.invoke([system_msg, human_msg])
+        final_text = response.content.strip()
+
+        latency = (time.time() - start_time) * 1000
+        return {
+            "final_response": final_text,
+            "_metrics": {
+                "agent":    "CoordinatorAI",
+                "latency_ms": latency,
+                "decision": "General Chat (Fallback)",
+                "status":   "OK"
+            }
+        }
+    except Exception:
+        return _respond_directly(start_time, "Ada yang bisa saya bantu lagi terkait produk parfum?")
+
+def _respond_directly(start_time, message: str) -> dict:
+    latency = (time.time() - start_time) * 1000
+    return {
+        "final_response": message,
+        "_metrics": {
+            "agent":    "CoordinatorAI",
+            "latency_ms": latency,
+            "decision": "Direct Response",
+            "status":   "OK"
+        }
+    }
+
 def _handle_restock_direct(state: AgentState, services_results: list, start_time: float) -> dict | None:
     tx_context = state.get("transaction_context", {})
     status = tx_context.get("status")
@@ -349,31 +337,3 @@ def _handle_restock_direct(state: AgentState, services_results: list, start_time
         return _respond_directly(start_time, msg)
 
     return None
-
-def _build_restock_clarification(entities: dict, context: dict, tx_context: dict, ambiguities: list) -> str:
-    product = entities.get("product") or tx_context.get("product") or context.get("current_product")
-    size_ml = entities.get("size_ml") or tx_context.get("size_ml") or context.get("current_variant")
-    qty     = entities.get("quantity") or tx_context.get("qty") or context.get("current_quantity")
-
-    if not product or product == "UNKNOWN_PRODUCT":
-        return "Untuk proses reorder/restok, produk parfum mana yang ingin Anda restok?"
-
-    if not size_ml:
-        return f"Untuk reorder **{product}**, ukuran botol berapa ml yang ingin direstok (misal: 30ml, 50ml, atau 100ml)?"
-
-    if not qty or "quantity" in ambiguities or tx_context.get("status") == "WAITING_QTY":
-        return f"Untuk reorder **{product} {size_ml}ml**, berapa pcs/botol yang ingin diproduksi?"
-
-    return f"Mohon konfirmasi kembali detail restok untuk **{product} {size_ml}ml**."
-
-def _respond_directly(start_time: float, message: str) -> dict:
-    latency = (time.time() - start_time) * 1000
-    return {
-        "final_response": message,
-        "_metrics": {
-            "agent":      "CoordinatorAI",
-            "latency_ms": latency,
-            "decision":   "Direct Dynamic Response",
-            "status":     "OK"
-        }
-    }

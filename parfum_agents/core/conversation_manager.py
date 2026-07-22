@@ -59,16 +59,14 @@ def handle_system_command(user_input: str, state: AgentState) -> dict | None:
         
     elif command in ["HELP", "MENU"]:
         menu_text = (
-            "Menu Bantuan & Navigasi Cepat:\n\n"
-            "- Pembelian: 'Beli Chanel Noir 50ml'\n"
-            "- Cek Harga: 'Berapa harga YSL Ratione Noir?'\n"
-            "- Cek Stok: 'Apakah stok Tom Ford 50ml tersedia?'\n"
-            "- Laporan: 'Laporan penjualan bulan ini'\n"
-            "- Restock: 'Restok Tom Ford Intense 50ml 50 botol'\n"
-            "- Perintah Sistem:\n"
-            "   * reset : Bersihkan percakapan & transaksi aktif\n"
-            "   * cancel: Batalkan pesanan yang sedang berjalan\n"
-            "   * help  : Tampilkan menu bantuan ini"
+            "Berikut hal-hal yang bisa saya bantu:\n\n"
+            "🛒 **Pembelian** — \"Beli Chanel Noir 50ml\"\n"
+            "💰 **Cek Harga** — \"Berapa harga YSL Ratione Noir?\"\n"
+            "📦 **Cek Stok** — \"Stok Tom Ford Intense ada?\"\n"
+            "📊 **Laporan Penjualan** — \"Laporan bulan ini\"\n"
+            "🔄 **Restock/Reorder** — \"Restok Tom Ford Intense 50ml 50 botol\"\n"
+            "🎯 **Rekomendasi** — \"Rekomendasi parfum untuk pria\"\n\n"
+            "Silakan ketik pertanyaan Anda!"
         )
         return {
             "system_command_triggered": True,
