@@ -236,6 +236,114 @@
             border-radius: 8px;
         }
 
+        /* Detailed Explanation Bottom Card */
+        .detail-explanation-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            margin-top: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .detail-explanation-card h2 {
+            font-size: 1.35rem;
+            color: #f8fafc;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle-text {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-bottom: 24px;
+        }
+
+        .stages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .stage-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stage-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .stage-number {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(59,130,246,0.3));
+            color: #c4b5fd;
+            border: 1px solid rgba(139,92,246,0.5);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.05rem;
+            flex-shrink: 0;
+        }
+
+        .stage-header h4 {
+            font-size: 0.98rem;
+            color: #f1f5f9;
+        }
+
+        .stage-sub {
+            font-size: 0.76rem;
+            color: #38bdf8;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .detail-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .detail-list li {
+            font-size: 0.84rem;
+            line-height: 1.45;
+            color: #cbd5e1;
+            position: relative;
+            padding-left: 16px;
+        }
+
+        .detail-list li::before {
+            content: "•";
+            color: var(--accent-purple);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .detail-list code {
+            background: #090d16;
+            color: #a78bfa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-family: 'Fira Code', monospace;
+        }
+
         @media (max-width: 1024px) {
             .graph-overlay-left {
                 position: static;
@@ -401,6 +509,75 @@ flowchart TD
     class REPO repo;
     class COORD llm;
 
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Explanation Bottom Card (Underneath Graph Canvas) -->
+        <div class="detail-explanation-card">
+            <h2>📘 Panduan Detail Alur Eksekusi Multi-Agent Architecture</h2>
+            <p class="subtitle-text">Penjelasan lengkap mengenai siklus hidup pesan pengguna, peran setiap layer agen, dan mekanisme eksekusi transaksi terdekopel.</p>
+
+            <div class="stages-grid">
+                <div class="stage-card">
+                    <div class="stage-header">
+                        <span class="stage-number">01</span>
+                        <div>
+                            <h4>Tahap 1: Ingestion & Analysis Pipeline</h4>
+                            <span class="stage-sub">Front-Door, Context Memory & Generic Extraction</span>
+                        </div>
+                    </div>
+                    <ul class="detail-list">
+                        <li><strong>Conversation Manager</strong>: Menyaring perintah cepat sistem seperti <code>reset</code>, <code>cancel</code>, <code>help</code> tanpa melalui LLM.</li>
+                        <li><strong>Memory Service</strong>: Mengupdate dan mengunci preferensi memori pengguna lintas turn.</li>
+                        <li><strong>NLU Service (Generic Entity Extractor)</strong>: Mengekstraksi entitas domain (<code>product</code>, <code>size_ml</code>, <code>quantity</code>, <code>payment_method</code>, <code>period</code>) secara generik dari teks pengguna.</li>
+                        <li><strong>Event Mapper & Planner Service</strong>: Menerjemahkan intent menjadi event FSM dan menghasilkan <code>ExecutionPlan</code> bertipe yang berisi daftar <code>Action(Enum)</code>.</li>
+                    </ul>
+                </div>
+
+                <div class="stage-card">
+                    <div class="stage-header">
+                        <span class="stage-number">02</span>
+                        <div>
+                            <h4>Tahap 2: FSM Routing & Execution Engine</h4>
+                            <span class="stage-sub">Pure FSM Router & Agent Registry Dispatching</span>
+                        </div>
+                    </div>
+                    <ul class="detail-list">
+                        <li><strong>Workflow Manager (Pure FSM)</strong>: Mengelola transisi state mesin status (FSM) tanpa memiliki dependensi langsung ke nama agen.</li>
+                        <li><strong>Execution Engine</strong>: Mengatur eksekusi stage agen (paralel/sekuensial), isolasi kegagalan, dan retry policy.</li>
+                        <li><strong>Action Router & Agent Registry</strong>: Memetakan <code>Action(Enum)</code> ke implementasi <code>BaseSpecialistAgent</code> yang sesuai menggunakan pola <em>Dependency Injection</em>.</li>
+                    </ul>
+                </div>
+
+                <div class="stage-card">
+                    <div class="stage-header">
+                        <span class="stage-number">03</span>
+                        <div>
+                            <h4>Tahap 3: Specialist Agents & Persistence Layer</h4>
+                            <span class="stage-sub">Read/Write Decoupled Services & Repositories</span>
+                        </div>
+                    </div>
+                    <ul class="detail-list">
+                        <li><strong>PricingAgent (Action.CHECK_PRICE)</strong>: <em>Business Enrichment</em> murni yang menghitung harga satuan dan subtotal.</li>
+                        <li><strong>InventoryAgent (Action.CHECK_STOCK)</strong>: <em>Read-Only Information Provider</em> yang mengecek ketersediaan stok riil gudang tanpa mengubah database.</li>
+                        <li><strong>OrderAgent (Action.CREATE_ORDER)</strong>: <em>Atomic Transaction Orchestrator</em> yang mengeksekusi blok transaksi <code>BEGIN ... COMMIT / ROLLBACK</code> SQLite untuk memotong stok dan mencatat <code>sales_history</code>.</li>
+                        <li><strong>Repositories Layer</strong>: Mengisolasi penuh kueri SQL (<code>CatalogRepository</code>, <code>InventoryRepository</code>, <code>OrderRepository</code>) dari logika bisnis agen.</li>
+                    </ul>
+                </div>
+
+                <div class="stage-card">
+                    <div class="stage-header">
+                        <span class="stage-number">04</span>
+                        <div>
+                            <h4>Tahap 4: Action-Indexed Response Synthesis</h4>
+                            <span class="stage-sub">Result Aggregation & Coordinator AI</span>
+                        </div>
+                    </div>
+                    <ul class="detail-list">
+                        <li><strong>AgentResult Aggregator</strong>: Utilitas yang menyatukan seluruh objek <code>AgentResult</code> yang terindeks berdasarkan <code>Action(Enum)</code>.</li>
+                        <li><strong>Coordinator AI</strong>: Menyintesiskan teks respons percakapan yang ramah pengguna, menyusun Ringkasan Pesanan terstruktur, pilihan pembayaran, hingga Bukti Struk Transaksi resmi (<code>INV-YYYYMMDD-XXXX</code>).</li>
+                    </ul>
                 </div>
             </div>
         </div>
