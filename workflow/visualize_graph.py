@@ -32,15 +32,14 @@ def generate_visualizations():
     with open(raw_mermaid_file, "w", encoding="utf-8") as f:
         f.write(raw_mermaid_code)
 
-
     # 3. 100% Valid, Clean & Tested Mermaid Syntax Diagram
     clean_mermaid_code = """---
 config:
   theme: dark
   flowchart:
     curve: linear
-    nodeSpacing: 50
-    rankSpacing: 60
+    nodeSpacing: 40
+    rankSpacing: 50
 ---
 flowchart TD
     %% Node Definitions
@@ -119,7 +118,6 @@ flowchart TD
     print(f"Saved Raw Mermaid Diagram: {raw_mermaid_file}")
     print(f"Saved Clean Mermaid Diagram: {clean_mermaid_file}")
 
-
     # 4. Generate Interactive Standalone HTML Document
     html_content = f"""<!DOCTYPE html>
 <html lang="id">
@@ -162,8 +160,8 @@ flowchart TD
             background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.9) 100%);
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 24px 32px;
-            margin-bottom: 24px;
+            padding: 20px 28px;
+            margin-bottom: 20px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
             display: flex;
             justify-content: space-between;
@@ -171,17 +169,17 @@ flowchart TD
         }}
 
         .header-title h1 {{
-            font-size: 1.75rem;
+            font-size: 1.6rem;
             font-weight: 700;
             background: linear-gradient(90deg, #a78bfa, #60a5fa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }}
 
         .header-title p {{
             color: var(--text-muted);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }}
 
         .badge-container {{
@@ -208,7 +206,7 @@ flowchart TD
         .main-content {{
             display: grid;
             grid-template-columns: 1fr 340px;
-            gap: 24px;
+            gap: 20px;
             flex: 1;
         }}
 
@@ -222,25 +220,27 @@ flowchart TD
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 24px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow: auto;
+            justify-content: center;
+            overflow: hidden;
             position: relative;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-            min-height: 650px;
+            min-height: 680px;
+            width: 100%;
         }}
 
         .graph-controls {{
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 16px;
+            right: 16px;
             display: flex;
             gap: 8px;
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(8px);
-            padding: 6px;
+            padding: 6px 10px;
             border-radius: 10px;
             border: 1px solid var(--border-color);
             z-index: 10;
@@ -250,11 +250,12 @@ flowchart TD
             background: #334155;
             border: none;
             color: var(--text-main);
-            width: 32px;
-            height: 32px;
+            height: 30px;
+            padding: 0 10px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
+            font-size: 0.85rem;
+            font-weight: 600;
             transition: all 0.2s;
             display: flex;
             align-items: center;
@@ -263,14 +264,33 @@ flowchart TD
 
         .control-btn:hover {{
             background: var(--accent-purple);
+            color: #fff;
         }}
 
         .mermaid-wrapper {{
             width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
-            transform-origin: top center;
+            align-items: center;
+            overflow: auto;
+            padding: 20px;
+        }}
+
+        .mermaid-wrapper .mermaid {{
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-origin: center center;
             transition: transform 0.2s ease-out;
+        }}
+
+        .mermaid-wrapper svg {{
+            max-width: 100% !important;
+            height: auto !important;
+            width: 100% !important;
+            border-radius: 8px;
         }}
 
         .sidebar {{
@@ -287,7 +307,7 @@ flowchart TD
         }}
 
         .info-card h3 {{
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             margin-bottom: 14px;
             color: #f1f5f9;
             display: flex;
@@ -306,7 +326,7 @@ flowchart TD
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
         }}
 
         .legend-color {{
@@ -318,7 +338,7 @@ flowchart TD
 
         .node-desc {{
             color: var(--text-muted);
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             margin-top: 2px;
         }}
 
@@ -327,13 +347,13 @@ flowchart TD
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
         }}
 
         .step-item {{
             position: relative;
-            padding-left: 36px;
-            font-size: 0.9rem;
+            padding-left: 34px;
+            font-size: 0.88rem;
         }}
 
         .step-item::before {{
@@ -342,8 +362,8 @@ flowchart TD
             position: absolute;
             left: 0;
             top: 0;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             background: rgba(139, 92, 246, 0.2);
             color: #c4b5fd;
             border: 1px solid rgba(139, 92, 246, 0.4);
@@ -364,7 +384,6 @@ flowchart TD
             font-size: 0.78rem;
             color: #a78bfa;
             overflow-x: auto;
-            max-height: 180px;
         }}
     </style>
 </head>
@@ -376,21 +395,21 @@ flowchart TD
         </div>
         <div class="badge-container">
             <span class="badge badge-green">v2.0 Active</span>
-            <span class="badge">LangGraph Powered</span>
+            <span class="badge">Mermaid Live</span>
         </div>
     </div>
 
     <div class="main-content">
         <div class="graph-card">
             <div class="graph-controls">
-                <button class="control-btn" onclick="zoomGraph(0.1)">+</button>
-                <button class="control-btn" onclick="zoomGraph(-0.1)">-</button>
-                <button class="control-btn" onclick="resetZoom()">⟲</button>
+                <button class="control-btn" onclick="zoomGraph(0.15)">🔍 +</button>
+                <button class="control-btn" onclick="zoomGraph(-0.15)">🔍 -</button>
+                <button class="control-btn" onclick="resetZoom()">⟲ Reset</button>
             </div>
-            <div class="mermaid-wrapper" id="mermaid-container">
-                <pre class="mermaid">
+            <div class="mermaid-wrapper">
+                <div class="mermaid" id="mermaid-element">
 {clean_mermaid_code}
-                </pre>
+                </div>
             </div>
         </div>
 
@@ -453,10 +472,10 @@ flowchart TD
 
             <div class="info-card">
                 <h3>📄 Export Options</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Mermaid mmd & HTML interactive file telah tersimpan secara otomatis.</p>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">Mermaid MMD & Interactive HTML file tersimpan secara otomatis.</p>
                 <div class="code-preview">
-                    workflow_graph_clean.mmd<br/>
-                    workflow_graph.html
+                    docs/workflow_graph_clean.mmd<br/>
+                    docs/workflow_graph.html
                 </div>
             </div>
         </div>
@@ -467,11 +486,11 @@ flowchart TD
             startOnLoad: true,
             theme: 'dark',
             flowchart: {{
-                useMaxWidth: false,
+                useMaxWidth: true,
                 htmlLabels: true,
                 curve: 'linear',
-                nodeSpacing: 50,
-                rankSpacing: 60
+                nodeSpacing: 40,
+                rankSpacing: 50
             }}
         }});
 
@@ -480,14 +499,14 @@ flowchart TD
             currentZoom += delta;
             if (currentZoom < 0.4) currentZoom = 0.4;
             if (currentZoom > 2.5) currentZoom = 2.5;
-            const container = document.getElementById('mermaid-container');
-            container.style.transform = `scale(${{currentZoom}})`;
+            const element = document.getElementById('mermaid-element');
+            element.style.transform = `scale(${{currentZoom}})`;
         }}
 
         function resetZoom() {{
             currentZoom = 1.0;
-            const container = document.getElementById('mermaid-container');
-            container.style.transform = `scale(1.0)`;
+            const element = document.getElementById('mermaid-element');
+            element.style.transform = `scale(1.0)`;
         }}
     </script>
 </body>
@@ -501,20 +520,6 @@ flowchart TD
         f.write(html_content)
     print(f"Saved Interactive Clean HTML Graph: {html_file}")
     print(f"Saved Dashboard HTML Graph: {dashboard_html_file}")
-
-    # 5. Try generating PNG image
-    try:
-        png_bytes = graph.draw_mermaid_png()
-        png_file = DOCS_DIR / "workflow_graph.png"
-        dashboard_png_file = DASHBOARD_DIR / "workflow_graph.png"
-        with open(png_file, "wb") as f:
-            f.write(png_bytes)
-        with open(dashboard_png_file, "wb") as f:
-            f.write(png_bytes)
-        print(f"Saved PNG Graph Image: {png_file}")
-    except Exception as e:
-        print(f"Note: PNG export via mermaid API skipped ({e}). HTML & Mermaid MMD files are available!")
-
 
 if __name__ == "__main__":
     generate_visualizations()
