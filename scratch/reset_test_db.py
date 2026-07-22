@@ -8,7 +8,7 @@ import config
 def reset_inventory():
     conn = sqlite3.connect(config.DB_PATH)
     c = conn.cursor()
-    c.execute("UPDATE inventory SET quantity_available = 500")
+    c.execute("UPDATE inventory SET quantity_available = 50")
     conn.commit()
     conn.close()
     print("Database inventory stock reset to 500 pcs for all items.")

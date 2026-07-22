@@ -8,7 +8,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
 from parfum_agents.tools.utils import log_evaluation
-from models import AgentState, ResultType
+from parfum_agents.tools.aggregator import AgentResultAggregator
+from models import AgentState, ResultType, Action
 
 def _load_prompt_template(filename: str) -> str:
     path = os.path.join(config.PROMPTS_DIR, filename)
@@ -31,6 +32,9 @@ def run(state: AgentState) -> dict:
     tx_context = state.get("transaction_context", {})
     event = state.get("workflow_event", "UNKNOWN")
 
+    # Aggregate all specialist agent results by Action Enum
+    results_by_action = AgentResultAggregator.merge_results(services_results)
+
     if tx_context.get("workflow") == "RESTOCK":
         direct = _handle_restock_direct(state, services_results, start_time)
         if direct:
@@ -47,20 +51,16 @@ def run(state: AgentState) -> dict:
             size_ml = tx_context.get("size_ml", 50)
             qty = tx_context.get("qty", 1)
 
-            for res in services_results:
-                if res.get("service_name") == "PricingService":
-                    payload = res.get("payload", {})
-                    prices = payload.get("prices", {})
-                    unit_price = payload.get("unit_price") or prices.get(f"{size_ml}ml", 0)
-                    total_price = payload.get("total_price") or (unit_price * qty)
-                    if unit_price:
-                        unit_price_fmt = f"Rp {unit_price:,.0f}".replace(",", ".")
-                        subtotal_fmt = f"Rp {total_price:,.0f}".replace(",", ".")
-                elif res.get("service_name") == "InventoryService":
-                    payload = res.get("payload", {})
-                    total_avail = payload.get("total_available", 0)
+            pricing_data = results_by_action.get(Action.CHECK_PRICE) or results_by_action.get("PricingService") or {}
+            inventory_data = results_by_action.get(Action.CHECK_STOCK) or results_by_action.get("InventoryService") or {}
 
-            if unit_price_fmt and subtotal_fmt:
+            unit_price = pricing_data.get("unit_price")
+            total_price = pricing_data.get("total_price") or pricing_data.get("subtotal") or (unit_price * qty if unit_price else None)
+            total_avail = inventory_data.get("stock") or inventory_data.get("total_available")
+
+            if unit_price and total_price:
+                unit_price_fmt = f"Rp {unit_price:,.0f}".replace(",", ".")
+                subtotal_fmt = f"Rp {total_price:,.0f}".replace(",", ".")
                 msg = (
                     f"Saya menemukan produk yang Anda pilih.\n\n"
                     f"**Ringkasan Pesanan**\n"
@@ -87,35 +87,34 @@ def run(state: AgentState) -> dict:
             return _respond_directly(start_time, "Baik, pesanan Anda telah dibatalkan. Ada lagi yang bisa saya bantu?")
             
     if wf_state == "COMPLETED":
-        for res in services_results:
-            if res.get("service_name") == "OrderService" and res.get("result_type") == ResultType.SUCCESS:
-                payload = res.get("payload", {})
-                inv_no = payload.get("transaction_id", tx_context.get("invoice_no", "INV-20260722-0001"))
-                p_name = payload.get("product", tx_context.get("product", "Parfum"))
-                s_ml = payload.get("size_ml", tx_context.get("size_ml", 50))
-                q_val = payload.get("qty", tx_context.get("qty", 1))
-                u_price = payload.get("unit_price", tx_context.get("unit_price", 0))
-                tot_price = payload.get("total_price", tx_context.get("subtotal", 0))
-                pay_method = payload.get("payment_method", tx_context.get("payment_method", "Tunai")).capitalize()
-                rem_stock = payload.get("remaining_stock", tx_context.get("remaining_stock", 0))
+        order_data = results_by_action.get(Action.CREATE_ORDER) or results_by_action.get("OrderService") or {}
+        if order_data.get("success", True):
+            inv_no = order_data.get("invoice") or order_data.get("transaction_id", tx_context.get("invoice_no", "INV-20260722-0001"))
+            p_name = order_data.get("product", tx_context.get("product", "Parfum"))
+            s_ml = order_data.get("size_ml", tx_context.get("size_ml", 50))
+            q_val = order_data.get("qty", tx_context.get("qty", 1))
+            u_price = order_data.get("unit_price", tx_context.get("unit_price", 0))
+            tot_price = order_data.get("total_price") or order_data.get("subtotal", tx_context.get("subtotal", 0))
+            pay_method = str(order_data.get("payment_method", tx_context.get("payment_method", "Tunai"))).capitalize()
+            rem_stock = order_data.get("remaining_stock", tx_context.get("remaining_stock", 0))
 
-                u_price_fmt = f"Rp {u_price:,.0f}".replace(",", ".") if u_price else "Rp 0"
-                tot_price_fmt = f"Rp {tot_price:,.0f}".replace(",", ".") if tot_price else "Rp 0"
+            u_price_fmt = f"Rp {u_price:,.0f}".replace(",", ".") if u_price else "Rp 0"
+            tot_price_fmt = f"Rp {tot_price:,.0f}".replace(",", ".") if tot_price else "Rp 0"
 
-                receipt_msg = (
-                    f"✅ Pembelian berhasil diproses.\n\n"
-                    f"**Detail Transaksi**\n"
-                    f"• Produk: {p_name}\n"
-                    f"• Ukuran: {s_ml}ml\n"
-                    f"• Jumlah: {q_val} botol\n"
-                    f"• Harga satuan: {u_price_fmt}\n"
-                    f"• Total pembayaran: {tot_price_fmt}\n"
-                    f"• Metode pembayaran: {pay_method}\n"
-                    f"• Nomor transaksi: {inv_no}\n"
-                    f"• Sisa stok: {rem_stock} botol\n\n"
-                    f"Terima kasih telah berbelanja di Parfum Enterprise."
-                )
-                return _respond_directly(start_time, receipt_msg)
+            receipt_msg = (
+                f"✅ Pembelian berhasil diproses.\n\n"
+                f"**Detail Transaksi**\n"
+                f"• Produk: {p_name}\n"
+                f"• Ukuran: {s_ml}ml\n"
+                f"• Jumlah: {q_val} botol\n"
+                f"• Harga satuan: {u_price_fmt}\n"
+                f"• Total pembayaran: {tot_price_fmt}\n"
+                f"• Metode pembayaran: {pay_method}\n"
+                f"• Nomor transaksi: {inv_no}\n"
+                f"• Sisa stok: {rem_stock} botol\n\n"
+                f"Terima kasih telah berbelanja di Parfum Enterprise."
+            )
+            return _respond_directly(start_time, receipt_msg)
                     
         return _respond_directly(start_time, "Pesanan Anda berhasil dibuat dan status transaksi selesai.")
         

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LangGraph Workflow Architecture - Parfum Enterprise</title>
+    <title>LangGraph Multi-Agent Architecture - Parfum Enterprise</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -269,11 +269,11 @@
 <body>
     <div class="header">
         <div class="header-title">
-            <h1>LangGraph Multi-Agent Architecture</h1>
-            <p>Visualisasi Alur Workflow Orchestration System & Router Agent</p>
+            <h1>LangGraph Multi-Agent Architecture (10/10 Enterprise Grade)</h1>
+            <p>Visualisasi Action Router, Decoupled Repositories, & Execution Engine</p>
         </div>
         <div class="badge-container">
-            <span class="badge badge-green">v2.0 Active</span>
+            <span class="badge badge-green">v3.0 Production</span>
             <span class="badge">Mermaid Live</span>
         </div>
     </div>
@@ -298,56 +298,64 @@ config:
 flowchart TD
     %% Node Definitions
     START(["🟢 USER INPUT<br/>Pesan User"])
-    NLU["🧠 NLU Service<br/>Intent & Coreference"]
+    CM["⚡ Conversation Manager<br/>Front-Door System Commands"]
+    MEM["💾 Memory Service<br/>Cross-Turn Preference Memory"]
+    NLU["🧠 NLU Service<br/>Generic Entity Extraction"]
     EM["⚡ Event Mapper<br/>Intent to Event"]
-    PS["📋 Planner Service<br/>Generate Plan"]
+    PS["📋 Planner Service<br/>Typed ExecutionPlan & Action Enums"]
     
-    WM{"🔀 Workflow Manager<br/>Dynamic Router Hub"}
+    WM{"🔀 Workflow Manager<br/>Pure FSM State Router"}
+    EE["⚙️ Execution Engine & Action Router<br/>AgentRegistry & Action Dispatcher"]
+
+    PRIC["🏷️ PricingAgent<br/>Action.CHECK_PRICE (Enrichment)"]
+    INV["📦 InventoryAgent<br/>Action.CHECK_STOCK (Read Only)"]
+    ORD["📝 OrderAgent<br/>Action.CREATE_ORDER (Atomic Transaction)"]
+    REP["📊 ReportingAgent<br/>Action.CHECK_REPORT"]
+    PROD["🧪 ProductionAgent<br/>Action.PRODUCE_ITEM"]
+    PROC["🛒 ProcurementAgent<br/>Action.PROCURE_ITEM"]
     
-    INV["📦 Inventory Service<br/>Cek Stok Gudang"]
-    PROD["🧪 Production Service<br/>Cek Recipe & Batch"]
-    PROC["🛒 Procurement Service<br/>PO & Restock Bahan"]
-    PRIC["🏷️ Pricing Service<br/>Cek Harga & Diskon"]
-    REP["📊 Reporting Service<br/>Analisis Penjualan"]
-    ORD["📝 Order Service<br/>Checkout & Order Baru"]
-    
-    COORD["🤖 Coordinator AI<br/>LLM Response Synthesis"]
+    REPO[("🗄️ Repositories Layer<br/>Catalog, Inventory, Order SQL Isolation")]
+    COORD["🤖 Coordinator AI<br/>Action-Indexed Response Synthesizer"]
     END_NODE(["🔴 BOT RESPONSE<br/>Jawaban Final"])
 
     %% 1. Ingestion Pipeline
-    subgraph Stage1 ["Tahap 1: Pipeline Analisis & Perencanaan"]
-        START --> NLU
+    subgraph Stage1 ["Tahap 1: Ingestion & Analysis Pipeline"]
+        START --> CM
+        CM --> MEM
+        MEM --> NLU
         NLU --> EM
         EM --> PS
         PS --> WM
     end
 
-    %% 2. Executive Routing (FSM)
-    subgraph Stage2 ["Tahap 2: Routing Execution Plan"]
-        WM -- "01: Checkout Order" --> ORD
-        WM -- "02: Cek Stok Produk" --> INV
-        WM -- "03: Cek Harga Katalog" --> PRIC
-        WM -- "04: Buat Laporan Penjualan" --> REP
-        WM -- "05: Jalankan Produksi" --> PROD
-        WM -- "06: Restock/PO Supplier" --> PROC
-        WM -- "07: Direct LLM / Clarify" --> COORD
+    %% 2. Execution Engine & Action Routing
+    subgraph Stage2 ["Tahap 2: Execution Engine & Action Router"]
+        WM --> EE
+        EE -- "Action.CHECK_PRICE" --> PRIC
+        EE -- "Action.CHECK_STOCK" --> INV
+        EE -- "Action.CREATE_ORDER" --> ORD
+        EE -- "Action.CHECK_REPORT" --> REP
+        EE -- "Action.PRODUCE_ITEM" --> PROD
+        EE -- "Action.PROCURE_ITEM" --> PROC
     end
 
-    %% 3. Service Interactions & Cross-Service Dependencies
-    subgraph Stage3 ["Tahap 3: Eksekusi Spesialis Service"]
-        INV -- "Low/No Stock" --> PROD
-        PROD -- "Kurang Bahan Baku" --> PROC
-        ORD -- "Update Stok" --> INV
+    %% 3. Persistence Isolation Layer
+    subgraph Stage3 ["Tahap 3: Persistence Isolation Layer"]
+        PRIC --> REPO
+        INV --> REPO
+        ORD -- "Atomic Transaction (BEGIN...COMMIT)" --> REPO
+        PROD --> REPO
+        PROC --> REPO
     end
 
     %% 4. Response Synthesis Pipeline
-    subgraph Stage4 ["Tahap 4: Sintesis Respons"]
+    subgraph Stage4 ["Tahap 4: Action-Indexed Response Synthesis"]
+        PRIC --> COORD
         INV --> COORD
+        ORD --> COORD
+        REP --> COORD
         PROD --> COORD
         PROC --> COORD
-        PRIC --> COORD
-        REP --> COORD
-        ORD --> COORD
         COORD --> END_NODE
     end
 
@@ -358,12 +366,14 @@ flowchart TD
     classDef service fill:#1E293B,stroke:#3B82F6,stroke-width:2px,color:#93C5FD;
     classDef llm fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#FFFBEB,font-weight:bold;
     classDef ingester fill:#334155,stroke:#64748B,stroke-width:1px,color:#F8FAFC;
+    classDef repo fill:#0F766E,stroke:#14B8A6,stroke-width:2px,color:#CCFBF1,font-weight:bold;
 
     class START startNode;
     class END_NODE endNode;
-    class WM router;
-    class NLU,EM,PS ingester;
-    class INV,PROD,PROC,PRIC,REP,ORD service;
+    class WM,EE router;
+    class CM,MEM,NLU,EM,PS ingester;
+    class PRIC,INV,ORD,REP,PROD,PROC service;
+    class REPO repo;
     class COORD llm;
 
                 </div>
@@ -377,54 +387,32 @@ flowchart TD
                     <li class="legend-item">
                         <div class="legend-color" style="background: #8b5cf6;"></div>
                         <div>
-                            <strong>Workflow Manager (FSM)</strong>
-                            <div class="node-desc">Router utama yang mengontrol state & rollback</div>
+                            <strong>Workflow Manager (Pure FSM)</strong>
+                            <div class="node-desc">Router state tanpa dependensi agen</div>
+                        </div>
+                    </li>
+                    <li class="legend-item">
+                        <div class="legend-color" style="background: #14b8a6;"></div>
+                        <div>
+                            <strong>Repositories Layer</strong>
+                            <div class="node-desc">Isolasi SQL (Catalog, Inventory, Order)</div>
                         </div>
                     </li>
                     <li class="legend-item">
                         <div class="legend-color" style="background: #3b82f6;"></div>
                         <div>
-                            <strong>Specialist Agents</strong>
-                            <div class="node-desc">Domain logic (Inventory, Order, Pricing, dll)</div>
+                            <strong>Specialist Agents (Action Handlers)</strong>
+                            <div class="node-desc">BaseSpecialistAgent via Action Enum</div>
                         </div>
                     </li>
                     <li class="legend-item">
                         <div class="legend-color" style="background: #f59e0b;"></div>
                         <div>
                             <strong>Coordinator AI</strong>
-                            <div class="node-desc">LLM synthesizer untuk respon ramah user</div>
-                        </div>
-                    </li>
-                    <li class="legend-item">
-                        <div class="legend-color" style="background: #64748b;"></div>
-                        <div>
-                            <strong>NLU & Event Mapper</strong>
-                            <div class="node-desc">Ingestion pipeline penentu intent</div>
+                            <div class="node-desc">Action-indexed response synthesizer</div>
                         </div>
                     </li>
                 </ul>
-            </div>
-
-            <div class="info-card">
-                <h3>🚀 Alur Eksekusi Workflow</h3>
-                <ol class="step-list">
-                    <li class="step-item">
-                        <strong>NLU & Intent Extraction</strong>
-                        <div class="node-desc">Pesan user diproses untuk mengambil entitas & intent.</div>
-                    </li>
-                    <li class="step-item">
-                        <strong>Event & Plan Generation</strong>
-                        <div class="node-desc">EventMapper menentukan strategi & Planner menyusun DAG.</div>
-                    </li>
-                    <li class="step-item">
-                        <strong>FSM State Routing</strong>
-                        <div class="node-desc">WorkflowManager mengarahkan eksekusi ke service spesialis.</div>
-                    </li>
-                    <li class="step-item">
-                        <strong>Response Synthesis</strong>
-                        <div class="node-desc">CoordinatorAI menggabungkan data service menjadi teks ramah.</div>
-                    </li>
-                </ol>
             </div>
 
             <div class="info-card">

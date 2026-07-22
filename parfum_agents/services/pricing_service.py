@@ -2,87 +2,62 @@ import os
 import sys
 import time
 import uuid
-import sqlite3
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
-from models import AgentState, ResultType, Severity
+from models import AgentState, AgentResult, Action
+from parfum_agents.core.base_agent import BaseSpecialistAgent
+from parfum_agents.repositories import CatalogRepository
 
-def run(state: AgentState) -> dict:
-    start_time = time.time()
-    exec_id = str(uuid.uuid4())
-    
-    semantic_frame = state.get("semantic_frame", {})
-    entities = semantic_frame.get("entities", {})
-    context = state.get("conversation_context", {})
-    resolved = state.get("resolved_entities", {})
-    tx_context = state.get("transaction_context", {})
-    
-    product_name = entities.get("product") or tx_context.get("product") or context.get("current_product") or resolved.get("last_product")
-    requested_size = entities.get("size_ml") or tx_context.get("size_ml") or context.get("current_variant") or resolved.get("last_variant")
-    qty = entities.get("quantity") or tx_context.get("qty") or 1
+class PricingAgent(BaseSpecialistAgent):
+    """Specialist Agent performing Business Enrichment & Price Calculations."""
 
-    if not product_name or product_name == "UNKNOWN_PRODUCT":
-        res = {
-            "execution_id": exec_id,
-            "service_name": "PricingService",
-            "result_type": ResultType.ERROR,
-            "severity": Severity.WARNING,
-            "user_message": "Mohon maaf, saya belum menangkap produk apa yang ingin Anda cek harganya.",
-            "developer_message": "Missing product_name in semantic_frame and context",
-            "payload": {}
-        }
-        return {
-            "services_results": [res],
-            "_metrics": {
-                "agent": "PricingService",
-                "latency_ms": (time.time() - start_time) * 1000,
-                "decision": "PRODUCT_NOT_FOUND",
-                "status": "ERROR",
-                "execution_id": exec_id
-            }
-        }
+    def __init__(self, catalog_repo: CatalogRepository = None):
+        self.catalog_repo = catalog_repo or CatalogRepository()
+
+    def execute(self, state: AgentState) -> AgentResult:
+        start_time = time.time()
+        exec_id = str(uuid.uuid4())
         
-    try:
-        conn = sqlite3.connect(config.DB_PATH)
-        c = conn.cursor()
+        semantic_frame = state.get("semantic_frame", {})
+        entities = semantic_frame.get("entities", {})
+        context = state.get("conversation_context", {})
+        resolved = state.get("resolved_entities", {})
+        tx_context = state.get("transaction_context", {})
         
-        c.execute("SELECT perfume_id, name FROM perfume_catalog WHERE name LIKE ?", (f"%{product_name}%",))
-        prod = c.fetchone()
-        
+        product_name = entities.get("product") or tx_context.get("product") or context.get("current_product") or resolved.get("last_product")
+        requested_size = entities.get("size_ml") or tx_context.get("size_ml") or context.get("current_variant") or resolved.get("last_variant")
+        qty = entities.get("quantity") or tx_context.get("qty") or 1
+
+        if not product_name or product_name == "UNKNOWN_PRODUCT":
+            latency = (time.time() - start_time) * 1000
+            return AgentResult(
+                execution_id=exec_id,
+                action=Action.CHECK_PRICE,
+                service_name="PricingAgent",
+                success=False,
+                data={},
+                errors=("Missing product_name in semantic_frame and context",),
+                user_message="Mohon maaf, saya belum menangkap produk apa yang ingin Anda cek harganya.",
+                latency_ms=latency
+            )
+
+        prod = self.catalog_repo.find_product_by_name(product_name)
         if not prod:
-            conn.close()
-            res = {
-                "execution_id": exec_id,
-                "service_name": "PricingService",
-                "result_type": ResultType.ERROR,
-                "severity": Severity.WARNING,
-                "user_message": f"Mohon maaf, produk {product_name} tidak ditemukan dalam katalog kami.",
-                "developer_message": f"Product '{product_name}' not found in perfume_catalog",
-                "payload": {}
-            }
-            return {
-                "services_results": [res],
-                "_metrics": {
-                    "agent": "PricingService",
-                    "latency_ms": (time.time() - start_time) * 1000,
-                    "decision": "NOT_IN_CATALOG",
-                    "status": "ERROR",
-                    "execution_id": exec_id
-                }
-            }
-            
-        perfume_id = prod[0]
-        actual_name = prod[1]
-        
-        c.execute("""
-            SELECT i.size_ml, p.price_idr 
-            FROM inventory i 
-            JOIN perfume_catalog p ON i.perfume_id = p.perfume_id 
-            WHERE i.perfume_id = ?
-        """, (perfume_id,))
-        rows = c.fetchall()
-        conn.close()
+            latency = (time.time() - start_time) * 1000
+            return AgentResult(
+                execution_id=exec_id,
+                action=Action.CHECK_PRICE,
+                service_name="PricingAgent",
+                success=False,
+                data={},
+                errors=(f"Product '{product_name}' not found in perfume_catalog",),
+                user_message=f"Mohon maaf, produk {product_name} tidak ditemukan dalam katalog kami.",
+                latency_ms=latency
+            )
+
+        perfume_id, actual_name, category, price = prod
+        rows = self.catalog_repo.get_variant_prices(perfume_id)
         
         prices = {}
         for r in rows:
@@ -100,53 +75,38 @@ def run(state: AgentState) -> dict:
             
         unit_price = prices.get(f"{requested_size}ml", 0) if requested_size else (prices.get("100ml", 0) or prices.get("50ml", 0))
         total_price = unit_price * qty
+        latency = (time.time() - start_time) * 1000
 
-        latency = (time.time() - start_time) * 1000
-        
-        res = {
-            "execution_id": exec_id,
-            "service_name": "PricingService",
-            "result_type": ResultType.SUCCESS,
-            "severity": Severity.INFO,
-            "user_message": f"Harga untuk {actual_name} berhasil ditemukan.",
-            "developer_message": "Prices fetched successfully via JOIN.",
-            "payload": {
-                "product": actual_name,
-                "prices": prices,
-                "unit_price": unit_price,
-                "total_price": total_price
-            }
+        data = {
+            "product": actual_name,
+            "size_ml": requested_size,
+            "qty": qty,
+            "unit_price": unit_price,
+            "total_price": total_price,
+            "prices": prices
         }
-        
-        return {
-            "services_results": [res],
-            "_metrics": {
-                "agent": "PricingService",
-                "latency_ms": latency,
-                "decision": "PRICE_FETCHED",
-                "status": "OK",
-                "execution_id": exec_id
-            }
+
+        return AgentResult(
+            execution_id=exec_id,
+            action=Action.CHECK_PRICE,
+            service_name="PricingAgent",
+            success=True,
+            data=data,
+            user_message=f"Harga untuk {actual_name} berhasil ditemukan.",
+            latency_ms=latency
+        )
+
+# Backward-compatible wrapper function
+def run(state: AgentState) -> dict:
+    agent = PricingAgent()
+    result = agent.execute(state)
+    return {
+        "services_results": [result.to_dict()],
+        "_metrics": {
+            "agent": "PricingAgent",
+            "latency_ms": result.latency_ms,
+            "decision": "PRICE_FETCHED" if result.success else "PRICE_ERROR",
+            "status": "OK" if result.success else "ERROR",
+            "execution_id": result.execution_id
         }
-        
-    except Exception as e:
-        latency = (time.time() - start_time) * 1000
-        res = {
-            "execution_id": exec_id,
-            "service_name": "PricingService",
-            "result_type": ResultType.ERROR,
-            "severity": Severity.ERROR,
-            "user_message": "Mohon maaf, saat ini sistem gagal mengambil data harga. Silakan coba beberapa saat lagi.",
-            "developer_message": f"SQLite Error: {str(e)}",
-            "payload": {}
-        }
-        return {
-            "services_results": [res],
-            "_metrics": {
-                "agent": "PricingService",
-                "latency_ms": latency,
-                "decision": "Error",
-                "status": "ERROR",
-                "execution_id": exec_id
-            }
-        }
+    }
