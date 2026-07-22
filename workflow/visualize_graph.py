@@ -1,272 +1,34 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LangGraph Workflow Architecture - Parfum Enterprise</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-primary: #0f172a;
-            --bg-card: #1e293b;
-            --accent-purple: #8b5cf6;
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-amber: #f59e0b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-        }
+import os
+import sys
+from pathlib import Path
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
+# Add project root to sys.path
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR))
 
-        body {
-            background-color: var(--bg-primary);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-        }
+from workflow.graph import build_workflow
 
-        .header {
-            background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.9) 100%);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 24px 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+def generate_visualizations():
+    print("Building LangGraph Workflow...")
+    app = build_workflow()
+    graph = app.get_graph()
+    
+    # 1. Output ASCII Representation in Terminal (if grandalf is available)
+    print("\n=================== GRAPH ASCII REPRESENTATION ===================")
+    try:
+        ascii_graph = graph.draw_ascii()
+        print(ascii_graph)
+    except Exception as e:
+        print(f"ASCII graph skipped: {e} (Hint: 'pip install grandalf' to enable ASCII rendering)")
 
-        .header-title h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, #a78bfa, #60a5fa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 6px;
-        }
+    # 2. Raw Mermaid Code from LangGraph
+    raw_mermaid_code = graph.draw_mermaid()
+    raw_mermaid_file = BASE_DIR / "workflow_graph_raw.mmd"
+    with open(raw_mermaid_file, "w", encoding="utf-8") as f:
+        f.write(raw_mermaid_code)
 
-        .header-title p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        .badge-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        .badge {
-            background: rgba(139, 92, 246, 0.15);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            color: #c4b5fd;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .badge-green {
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #6ee7b7;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 24px;
-            flex: 1;
-        }
-
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .graph-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow: auto;
-            position: relative;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-            min-height: 650px;
-        }
-
-        .graph-controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 8px;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
-            padding: 6px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            z-index: 10;
-        }
-
-        .control-btn {
-            background: #334155;
-            border: none;
-            color: var(--text-main);
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .control-btn:hover {
-            background: var(--accent-purple);
-        }
-
-        .mermaid-wrapper {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            transform-origin: top center;
-            transition: transform 0.2s ease-out;
-        }
-
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .info-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 20px;
-        }
-
-        .info-card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 14px;
-            color: #f1f5f9;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.9rem;
-        }
-
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            flex-shrink: 0;
-        }
-
-        .node-desc {
-            color: var(--text-muted);
-            font-size: 0.82rem;
-            margin-top: 2px;
-        }
-
-        .step-list {
-            counter-reset: step;
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .step-item {
-            position: relative;
-            padding-left: 36px;
-            font-size: 0.9rem;
-        }
-
-        .step-item::before {
-            counter-increment: step;
-            content: counter(step);
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 24px;
-            height: 24px;
-            background: rgba(139, 92, 246, 0.2);
-            color: #c4b5fd;
-            border: 1px solid rgba(139, 92, 246, 0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-
-        .code-preview {
-            background: #090d16;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.78rem;
-            color: #a78bfa;
-            overflow-x: auto;
-            max-height: 180px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="header-title">
-            <h1>LangGraph Multi-Agent Architecture</h1>
-            <p>Visualisasi Alur Workflow Orchestration System & Router Agent</p>
-        </div>
-        <div class="badge-container">
-            <span class="badge badge-green">v2.0 Active</span>
-            <span class="badge">LangGraph Powered</span>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="graph-card">
-            <div class="graph-controls">
-                <button class="control-btn" onclick="zoomGraph(0.1)">+</button>
-                <button class="control-btn" onclick="zoomGraph(-0.1)">-</button>
-                <button class="control-btn" onclick="resetZoom()">⟲</button>
-            </div>
-            <div class="mermaid-wrapper" id="mermaid-container">
-                <pre class="mermaid">
----
+    # 3. 100% Valid, Clean & Tested Mermaid Syntax Diagram
+    clean_mermaid_code = """---
 config:
   theme: dark
   flowchart:
@@ -344,7 +106,283 @@ flowchart TD
     class NLU,EM,PS ingester;
     class INV,PROD,PROC,PRIC,REP,ORD service;
     class COORD llm;
+"""
+    clean_mermaid_file = BASE_DIR / "workflow_graph_clean.mmd"
+    with open(clean_mermaid_file, "w", encoding="utf-8") as f:
+        f.write(clean_mermaid_code)
+    print(f"Saved Raw Mermaid Diagram: {raw_mermaid_file}")
+    print(f"Saved Clean Mermaid Diagram: {clean_mermaid_file}")
 
+    # 4. Generate Interactive Standalone HTML Document
+    html_content = f"""<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraph Workflow Architecture - Parfum Enterprise</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {{
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }}
+
+        * {{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }}
+
+        body {{
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+        }}
+
+        .header {{
+            background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.9) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+
+        .header-title h1 {{
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }}
+
+        .header-title p {{
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }}
+
+        .badge-container {{
+            display: flex;
+            gap: 10px;
+        }}
+
+        .badge {{
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #c4b5fd;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }}
+
+        .badge-green {{
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }}
+
+        .main-content {{
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            flex: 1;
+        }}
+
+        @media (max-width: 1024px) {{
+            .main-content {{
+                grid-template-columns: 1fr;
+            }}
+        }}
+
+        .graph-card {{
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: auto;
+            position: relative;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            min-height: 650px;
+        }}
+
+        .graph-controls {{
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            z-index: 10;
+        }}
+
+        .control-btn {{
+            background: #334155;
+            border: none;
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+
+        .control-btn:hover {{
+            background: var(--accent-purple);
+        }}
+
+        .mermaid-wrapper {{
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            transform-origin: top center;
+            transition: transform 0.2s ease-out;
+        }}
+
+        .sidebar {{
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }}
+
+        .info-card {{
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+        }}
+
+        .info-card h3 {{
+            font-size: 1.1rem;
+            margin-bottom: 14px;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+
+        .legend-list {{
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }}
+
+        .legend-item {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+        }}
+
+        .legend-color {{
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }}
+
+        .node-desc {{
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin-top: 2px;
+        }}
+
+        .step-list {{
+            counter-reset: step;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }}
+
+        .step-item {{
+            position: relative;
+            padding-left: 36px;
+            font-size: 0.9rem;
+        }}
+
+        .step-item::before {{
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }}
+
+        .code-preview {{
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            color: #a78bfa;
+            overflow-x: auto;
+            max-height: 180px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">
+            <h1>LangGraph Multi-Agent Architecture</h1>
+            <p>Visualisasi Alur Workflow Orchestration System & Router Agent</p>
+        </div>
+        <div class="badge-container">
+            <span class="badge badge-green">v2.0 Active</span>
+            <span class="badge">LangGraph Powered</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="graph-card">
+            <div class="graph-controls">
+                <button class="control-btn" onclick="zoomGraph(0.1)">+</button>
+                <button class="control-btn" onclick="zoomGraph(-0.1)">-</button>
+                <button class="control-btn" onclick="resetZoom()">⟲</button>
+            </div>
+            <div class="mermaid-wrapper" id="mermaid-container">
+                <pre class="mermaid">
+{clean_mermaid_code}
                 </pre>
             </div>
         </div>
@@ -418,32 +456,57 @@ flowchart TD
     </div>
 
     <script>
-        mermaid.initialize({
+        mermaid.initialize({{
             startOnLoad: true,
             theme: 'dark',
-            flowchart: {
+            flowchart: {{
                 useMaxWidth: false,
                 htmlLabels: true,
                 curve: 'linear',
                 nodeSpacing: 50,
                 rankSpacing: 60
-            }
-        });
+            }}
+        }});
 
         let currentZoom = 1.0;
-        function zoomGraph(delta) {
+        function zoomGraph(delta) {{
             currentZoom += delta;
             if (currentZoom < 0.4) currentZoom = 0.4;
             if (currentZoom > 2.5) currentZoom = 2.5;
             const container = document.getElementById('mermaid-container');
-            container.style.transform = `scale(${currentZoom})`;
-        }
+            container.style.transform = `scale(${{currentZoom}})`;
+        }}
 
-        function resetZoom() {
+        function resetZoom() {{
             currentZoom = 1.0;
             const container = document.getElementById('mermaid-container');
             container.style.transform = `scale(1.0)`;
-        }
+        }}
     </script>
 </body>
 </html>
+"""
+    html_file = BASE_DIR / "workflow_graph.html"
+    dashboard_html_file = BASE_DIR / "dashboard" / "workflow_graph.html"
+    with open(html_file, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    with open(dashboard_html_file, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print(f"Saved Interactive Clean HTML Graph: {html_file}")
+    print(f"Saved Dashboard HTML Graph: {dashboard_html_file}")
+
+    # 5. Try generating PNG image
+    try:
+        png_bytes = graph.draw_mermaid_png()
+        png_file = BASE_DIR / "workflow_graph.png"
+        dashboard_png_file = BASE_DIR / "dashboard" / "workflow_graph.png"
+        with open(png_file, "wb") as f:
+            f.write(png_bytes)
+        with open(dashboard_png_file, "wb") as f:
+            f.write(png_bytes)
+        print(f"Saved PNG Graph Image: {png_file}")
+    except Exception as e:
+        print(f"Note: PNG export via mermaid API skipped ({e}). HTML & Mermaid MMD files are available!")
+
+if __name__ == "__main__":
+    generate_visualizations()

@@ -3,224 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Workflow Graph - Multi-Agent AI Parfum Enterprise</title>
+    <title>LangGraph Workflow Architecture - Parfum Enterprise</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #0b0f19;
-            --bg-card: #151d30;
-            --border-color: #2a3752;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-blue: #38bdf8;
-            --accent-green: #34d399;
-            --accent-purple: #c084fc;
-            --accent-orange: #fbbf24;
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         body {
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 1.5rem;
-            line-height: 1.5;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
-        }
-
-        h1 {
-            color: var(--accent-blue);
-            font-size: 2rem;
-            margin: 0 0 0.4rem 0;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
+            flex-direction: column;
+            padding: 24px;
         }
 
-        p.subtitle {
-            color: var(--text-secondary);
-            font-size: 1rem;
-            margin: 0;
-        }
-
-        .controls-bar {
+        .header {
+            background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.9) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: var(--bg-card);
-            padding: 12px 20px;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            border: 1px solid var(--border-color);
         }
 
-        .btn-group {
+        .header-title h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .badge-container {
             display: flex;
             gap: 10px;
         }
 
-        .btn {
-            background: #2a3752;
-            color: white;
-            border: 1px solid #3b4d71;
-            padding: 8px 14px;
+        .badge {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #c4b5fd;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            flex: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .graph-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: auto;
+            position: relative;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            min-height: 650px;
+        }
+
+        .graph-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .control-btn {
+            background: #334155;
+            border: none;
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .btn:hover {
-            background: var(--accent-blue);
-            color: #0f172a;
-        }
-
-        .card {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            margin-bottom: 1.8rem;
-            border: 1px solid var(--border-color);
-        }
-
-        .diagram-viewport {
-            width: 100%;
-            overflow: auto;
-            background-color: #070a13;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            padding: 2rem;
-            box-sizing: border-box;
+            font-weight: bold;
+            transition: all 0.2s;
             display: flex;
+            align-items: center;
             justify-content: center;
-            min-height: 600px;
         }
 
-        .mermaid {
+        .control-btn:hover {
+            background: var(--accent-purple);
+        }
+
+        .mermaid-wrapper {
             width: 100%;
             display: flex;
             justify-content: center;
             transform-origin: top center;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease-out;
         }
 
-        .mermaid svg {
-            max-width: none !important;
-            height: auto !important;
-            font-size: 14px !important;
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        /* Table Styling */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-            font-size: 0.92rem;
-        }
-
-        th, td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            background-color: #0b0f19;
-            color: var(--accent-blue);
-            font-weight: 600;
-        }
-
-        tr:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .badge-ingestion { background: #0284c7; color: white; }
-        .badge-router { background: #4f46e5; color: white; }
-        .badge-service { background: #059669; color: white; }
-        .badge-synthesis { background: #7c3aed; color: white; }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 16px;
-            margin-top: 1rem;
-        }
-
-        .scenario-box {
-            background: #0b0f19;
-            border-left: 4px solid var(--accent-blue);
-            padding: 1rem;
-            border-radius: 0 8px 8px 0;
+        .info-card {
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-left-width: 4px;
+            border-radius: 16px;
+            padding: 20px;
         }
 
-        .scenario-title {
-            font-weight: 600;
-            color: var(--accent-orange);
-            margin-bottom: 0.4rem;
-            font-size: 0.95rem;
+        .info-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 14px;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .scenario-flow {
-            font-family: 'Consolas', monospace;
-            color: var(--accent-green);
-            background: rgba(0, 0, 0, 0.4);
-            padding: 6px 10px;
+        .legend-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
             border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .node-desc {
+            color: var(--text-muted);
             font-size: 0.82rem;
-            word-break: break-word;
-            margin-top: 6px;
+            margin-top: 2px;
+        }
+
+        .step-list {
+            counter-reset: step;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .step-item {
+            position: relative;
+            padding-left: 36px;
+            font-size: 0.9rem;
+        }
+
+        .step-item::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .code-preview {
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            color: #a78bfa;
+            overflow-x: auto;
+            max-height: 180px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1><i class="fa-solid fa-diagram-project"></i> Diagram Arsitektur Workflow Multi-Agent AI</h1>
-            <p class="subtitle">Visualisasi Alur Kerja StateGraph & Dynamic Routing System (Parfum Enterprise)</p>
-        </header>
-
-        <div class="controls-bar">
-            <span style="color: var(--text-secondary); font-size: 0.9rem;">
-                <i class="fa-solid fa-circle-info" style="color: var(--accent-blue);"></i> Gunakan tombol zoom jika ingin memperbesar/memperkecil diagram:
-            </span>
-            <div class="btn-group">
-                <button class="btn" onclick="zoomGraph(0.15)"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom In</button>
-                <button class="btn" onclick="zoomGraph(-0.15)"><i class="fa-solid fa-magnifying-glass-minus"></i> Zoom Out</button>
-                <button class="btn" onclick="resetZoom()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
-            </div>
+    <div class="header">
+        <div class="header-title">
+            <h1>LangGraph Multi-Agent Architecture</h1>
+            <p>Visualisasi Alur Workflow Orchestration System & Router Agent</p>
         </div>
+        <div class="badge-container">
+            <span class="badge badge-green">v2.0 Active</span>
+            <span class="badge">LangGraph Powered</span>
+        </div>
+    </div>
 
-        <!-- DIAGRAM VIEWPORT -->
-        <div class="card">
-            <div class="diagram-viewport">
-                <div class="mermaid" id="mermaid-container">
+    <div class="main-content">
+        <div class="graph-card">
+            <div class="graph-controls">
+                <button class="control-btn" onclick="zoomGraph(0.1)">+</button>
+                <button class="control-btn" onclick="zoomGraph(-0.1)">-</button>
+                <button class="control-btn" onclick="resetZoom()">⟲</button>
+            </div>
+            <div class="mermaid-wrapper" id="mermaid-container">
+                <pre class="mermaid">
 ---
 config:
   theme: dark
@@ -253,162 +298,120 @@ flowchart TD
         START --> NLU
         NLU --> EM
         EM --> PS
+        PS --> WM
     end
 
-    PS --> WM
-
-    %% 2. Service Dispatching
-    subgraph Stage2 ["Tahap 2: Eksekusi Agen Spesialis"]
-        PRIC
-        INV
-        PROD
-        PROC
-        REP
-        ORD
+    %% 2. Executive Routing (FSM)
+    subgraph Stage2 ["Tahap 2: Routing Execution Plan"]
+        WM -- "01: Checkout Order" --> ORD
+        WM -- "02: Cek Stok Produk" --> INV
+        WM -- "03: Cek Harga Katalog" --> PRIC
+        WM -- "04: Buat Laporan Penjualan" --> REP
+        WM -- "05: Jalankan Produksi" --> PROD
+        WM -- "06: Restock/PO Supplier" --> PROC
+        WM -- "07: Direct LLM / Clarify" --> COORD
     end
 
-    WM -->|"1. Cek Harga"| PRIC
-    WM -->|"2. Cek Stok"| INV
-    WM -->|"3. Produksi"| PROD
-    WM -->|"4. Restock Bahan"| PROC
-    WM -->|"5. Laporan Business"| REP
-    WM -->|"6. Order Baru"| ORD
-
-    %% 3. Return Loops
-    PRIC -.->|"Plan Advanced"| WM
-    INV -.->|"Plan Advanced"| WM
-    PROD -.->|"Plan Advanced"| WM
-    PROC -.->|"Plan Advanced"| WM
-    REP -.->|"Plan Advanced"| WM
-    ORD -.->|"Plan Advanced"| WM
+    %% 3. Service Interactions & Cross-Service Dependencies
+    subgraph Stage3 ["Tahap 3: Eksekusi Spesialis Service"]
+        INV -- "Low/No Stock" --> PROD
+        PROD -- "Kurang Bahan Baku" --> PROC
+        ORD -- "Update Stok" --> INV
+    end
 
     %% 4. Response Synthesis Pipeline
-    subgraph Stage3 ["Tahap 3: Sintesis Respon Akhir"]
+    subgraph Stage4 ["Tahap 4: Sintesis Respons"]
+        INV --> COORD
+        PROD --> COORD
+        PROC --> COORD
+        PRIC --> COORD
+        REP --> COORD
+        ORD --> COORD
         COORD --> END_NODE
     end
 
-    WM ==>|"Plan Selesai"| COORD
+    %% Styling Nodes
+    classDef startNode fill:#10B981,stroke:#047857,stroke-width:2px,color:#fff,font-weight:bold;
+    classDef endNode fill:#EF4444,stroke:#B91C1C,stroke-width:2px,color:#fff,font-weight:bold;
+    classDef router fill:#8B5CF6,stroke:#6D28D9,stroke-width:3px,color:#fff,font-weight:bold;
+    classDef service fill:#1E293B,stroke:#3B82F6,stroke-width:2px,color:#93C5FD;
+    classDef llm fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#FFFBEB,font-weight:bold;
+    classDef ingester fill:#334155,stroke:#64748B,stroke-width:1px,color:#F8FAFC;
 
-    %% Node Styling & Colors
-    classDef startEnd fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
-    classDef intake fill:#1e293b,stroke:#0284c7,stroke-width:2px,color:#e0f2fe;
-    classDef router fill:#312e81,stroke:#a5b4fc,stroke-width:3px,color:#ffffff;
-    classDef service fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#ecfdf5;
-    classDef coord fill:#581c87,stroke:#c084fc,stroke-width:2px,color:#faf5ff;
-
-    class START,END_NODE startEnd;
-    class NLU,EM,PS intake;
+    class START startNode;
+    class END_NODE endNode;
     class WM router;
+    class NLU,EM,PS ingester;
     class INV,PROD,PROC,PRIC,REP,ORD service;
-    class COORD coord;
+    class COORD llm;
 
-                </div>
+                </pre>
             </div>
         </div>
 
-        <!-- TABLE OF NODE SPECIFICATIONS -->
-        <div class="card">
-            <h3 style="margin-top: 0; color: var(--accent-blue);"><i class="fa-solid fa-list-check"></i> Daftar Agen & Tanggung Jawab Alur Kerja</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Node / Agen</th>
-                        <th>Kategori Layer</th>
-                        <th>Tanggung Jawab Utama</th>
-                        <th>Keluaran State / DB</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>NLU Service</strong></td>
-                        <td><span class="badge badge-ingestion">Pipeline Analyst</span></td>
-                        <td>Eksctraksi maksud (intent), slot-filling entity, dan resolution pengganti kata (coreference).</td>
-                        <td><code>semantic_frame</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Event Mapper</strong></td>
-                        <td><span class="badge badge-ingestion">Pipeline Analyst</span></td>
-                        <td>Mapping intent & entitas menjadi business event standar (misal: <code>CHECK_PRICE</code>, <code>CHECK_STOCK</code>).</td>
-                        <td><code>workflow_event</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Planner Service</strong></td>
-                        <td><span class="badge badge-ingestion">Pipeline Analyst</span></td>
-                        <td>Menyusun urutan langkah eksekusi agen yang diperlukan ke dalam array <code>execution_plan</code>.</td>
-                        <td><code>execution_plan</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Workflow Manager</strong></td>
-                        <td><span class="badge badge-router">Dynamic Router</span></td>
-                        <td>Hub router utama. Membaca elemen pertama dari <code>execution_plan</code> dan mengarahkan alur ke agen yang sesuai.</td>
-                        <td>Dynamic Route Dispatch</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Inventory Service</strong></td>
-                        <td><span class="badge badge-service">Specialist Agent</span></td>
-                        <td>Pengecekan jumlah ketersediaan stok produk parfum jadi di gudang.</td>
-                        <td>SQLite (<code>inventory</code>)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Production Service</strong></td>
-                        <td><span class="badge badge-service">Specialist Agent</span></td>
-                        <td>Pengecekan formula/resep parfum dan stok bahan baku esensial. Memicu PO jika bahan kurang.</td>
-                        <td>SQLite (<code>ingredients</code>)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Procurement Service</strong></td>
-                        <td><span class="badge badge-service">Specialist Agent</span></td>
-                        <td>Pembuatan Purchase Order (PO) otomatis untuk pembelian bahan baku ke supplier.</td>
-                        <td>SQLite (<code>purchase_orders</code>)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Pricing Service</strong></td>
-                        <td><span class="badge badge-service">Specialist Agent</span></td>
-                        <td>Perhitungan harga produk berdasarkan varian ukuran (30ml, 50ml, 100ml) & diskon promo.</td>
-                        <td>SQLite (<code>perfume_catalog</code>)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Reporting Service</strong></td>
-                        <td><span class="badge badge-service">Specialist Agent</span></td>
-                        <td>Penyajian histori transaksi penjualan, top seller, & estimasi pendapatan bisnis.</td>
-                        <td>SQLite (<code>sales_history</code>)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Order Service</strong></td>
-                        <td><span class="badge badge-service">Specialist Agent</span></td>
-                        <td>Pencatatan transaksi pembelian baru & pemotongan stok secara terintegrasi.</td>
-                        <td>SQLite (<code>sales_history</code>)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Coordinator AI</strong></td>
-                        <td><span class="badge badge-synthesis">Response Synthesizer</span></td>
-                        <td>Menyintesis seluruh data hasil eksekusi agen menjadi jawaban bahasa alami yang ramah pengguna.</td>
-                        <td>Groq LLM (<code>llama-3.1</code>)</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <div class="sidebar">
+            <div class="info-card">
+                <h3>📌 Keterangan Komponen</h3>
+                <ul class="legend-list">
+                    <li class="legend-item">
+                        <div class="legend-color" style="background: #8b5cf6;"></div>
+                        <div>
+                            <strong>Workflow Manager (FSM)</strong>
+                            <div class="node-desc">Router utama yang mengontrol state & rollback</div>
+                        </div>
+                    </li>
+                    <li class="legend-item">
+                        <div class="legend-color" style="background: #3b82f6;"></div>
+                        <div>
+                            <strong>Specialist Agents</strong>
+                            <div class="node-desc">Domain logic (Inventory, Order, Pricing, dll)</div>
+                        </div>
+                    </li>
+                    <li class="legend-item">
+                        <div class="legend-color" style="background: #f59e0b;"></div>
+                        <div>
+                            <strong>Coordinator AI</strong>
+                            <div class="node-desc">LLM synthesizer untuk respon ramah user</div>
+                        </div>
+                    </li>
+                    <li class="legend-item">
+                        <div class="legend-color" style="background: #64748b;"></div>
+                        <div>
+                            <strong>NLU & Event Mapper</strong>
+                            <div class="node-desc">Ingestion pipeline penentu intent</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
 
-        <!-- WORKFLOW SCENARIOS -->
-        <div class="card">
-            <h3 style="margin-top: 0; color: var(--accent-orange);"><i class="fa-solid fa-route"></i> Alur Eksekusi Nyata Berdasarkan Kasus (Execution Scenarios)</h3>
-            <div class="grid-3">
-                <div class="scenario-box">
-                    <div class="scenario-title">1. Query Cek Harga ("Berapa harga Ratione Noir?")</div>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Single service execution plan disiapkan oleh Planner Service.</p>
-                    <div class="scenario-flow">NLU ➔ EventMapper ➔ Planner ➔ WorkflowManager ➔ PricingService ➔ WorkflowManager ➔ CoordinatorAI</div>
-                </div>
+            <div class="info-card">
+                <h3>🚀 Alur Eksekusi Workflow</h3>
+                <ol class="step-list">
+                    <li class="step-item">
+                        <strong>NLU & Intent Extraction</strong>
+                        <div class="node-desc">Pesan user diproses untuk mengambil entitas & intent.</div>
+                    </li>
+                    <li class="step-item">
+                        <strong>Event & Plan Generation</strong>
+                        <div class="node-desc">EventMapper menentukan strategi & Planner menyusun DAG.</div>
+                    </li>
+                    <li class="step-item">
+                        <strong>FSM State Routing</strong>
+                        <div class="node-desc">WorkflowManager mengarahkan eksekusi ke service spesialis.</div>
+                    </li>
+                    <li class="step-item">
+                        <strong>Response Synthesis</strong>
+                        <div class="node-desc">CoordinatorAI menggabungkan data service menjadi teks ramah.</div>
+                    </li>
+                </ol>
+            </div>
 
-                <div class="scenario-box">
-                    <div class="scenario-title">2. Cek Stok & Restock Produksi ("Pesan 50 botol")</div>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Multi-step plan bercabang otomatis dari Inventory ke Production & Procurement.</p>
-                    <div class="scenario-flow">NLU ➔ Planner ➔ WorkflowManager ➔ Inventory ➔ Production ➔ Procurement ➔ CoordinatorAI</div>
-                </div>
-
-                <div class="scenario-box">
-                    <div class="scenario-title">3. Checkout Pembelian ("Beli YSL 100ml 2 botol")</div>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Pencatatan transaksi di DB sales & update stok produk.</p>
-                    <div class="scenario-flow">NLU ➔ Planner ➔ WorkflowManager ➔ OrderService ➔ InventoryService ➔ CoordinatorAI</div>
+            <div class="info-card">
+                <h3>📄 Export Options</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Mermaid mmd & HTML interactive file telah tersimpan secara otomatis.</p>
+                <div class="code-preview">
+                    workflow_graph_clean.mmd<br/>
+                    workflow_graph.html
                 </div>
             </div>
         </div>

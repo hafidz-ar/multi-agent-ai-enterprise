@@ -5,6 +5,7 @@ config:
 ---
 graph TD;
 	__start__([<p>__start__</p>]):::first
+	conversation_manager(conversation_manager)
 	nlu(nlu)
 	event_mapper(event_mapper)
 	planner(planner)
@@ -17,7 +18,9 @@ graph TD;
 	order(order)
 	coordinator(coordinator)
 	__end__([<p>__end__</p>]):::last
-	__start__ --> nlu;
+	__start__ --> conversation_manager;
+	conversation_manager -.-> __end__;
+	conversation_manager -.-> nlu;
 	event_mapper --> planner;
 	inventory -.-> __end__;
 	inventory -.-> coordinator;

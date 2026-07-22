@@ -69,7 +69,8 @@ UAS/
 │       └── utils.py                # Transaction ID generator & evaluation logging
 │
 ├── workflow/                    # 🔄 Workflow Orchestration Engine
-│   └── graph.py                 # LangGraph StateGraph pipeline, parallel branch execution, tracing
+│   ├── graph.py                 # LangGraph StateGraph pipeline, parallel branch execution, tracing
+│   └── visualize_graph.py       # Generator visualisasi diagram workflow (HTML, MMD, PNG)
 │
 ├── api/                         # 🌐 FastAPI REST API Service
 │   └── main.py                  # API Endpoints (/api/chat, /api/events/history, /api/planner/cache)
@@ -101,3 +102,4 @@ UAS/
 3. **0ms Command Latency**: `conversation_manager.py` menangani perintah `/reset`, `/help`, `/cancel` secara langsung tanpa membuang token LLM.
 4. **Resilient FSM**: `workflow_manager.py` mengelola *Circuit Breaker*, *Rollback*, dan *Transaction Timeout*.
 5. **Parallel DAG Execution**: `graph.py` dan `planner_service.py` mendukung eksekusi parallel LangGraph untuk efisiensi latensi.
+6. **Workflow Visualizer**: `workflow/visualize_graph.py` memproduksi diagram visual interaktif LangGraph (Mermaid MMD, HTML, PNG).
