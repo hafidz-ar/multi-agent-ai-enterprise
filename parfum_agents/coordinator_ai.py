@@ -307,11 +307,16 @@ def _handle_clarification(state, user_input, goal, entities, ambiguities, start_
     if quantity:
         known_info.append(f"Jumlah: {quantity}")
 
+    if product != "belum diketahui" and size_ml and ("quantity" in ambiguities or not entities.get("quantity")):
+        return _respond_directly(start_time, f"Stok {product} {size_ml}ml tersedia. Berapa botol/pcs yang ingin Anda beli sebelum melanjutkan ke pembayaran?")
+
     missing_info = []
     if "product" in ambiguities:
         missing_info.append("nama produk parfum")
     if "size_ml" in ambiguities:
         missing_info.append("ukuran botol (misalnya: 50ml atau 100ml)")
+    if "quantity" in ambiguities:
+        missing_info.append("jumlah/banyaknya botol yang ingin dibeli")
 
     try:
         llm = ChatGroq(

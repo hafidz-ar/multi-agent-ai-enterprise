@@ -223,7 +223,7 @@ def _make_purchase_or_goal_frame(goal: str, product, size_ml, quantity, catalog:
 
     if goal in ["PURCHASE", "RESTOCK"] and not size_ml:
         ambiguities.append("size_ml")
-    if goal == "RESTOCK" and not quantity:
+    if goal in ["PURCHASE", "RESTOCK"] and not quantity:
         ambiguities.append("quantity")
 
     ops_map = {
@@ -238,7 +238,7 @@ def _make_purchase_or_goal_frame(goal: str, product, size_ml, quantity, catalog:
         "entities": {
             "product":        product,
             "size_ml":        size_ml,
-            "quantity":       quantity if quantity else (1 if goal == "PURCHASE" else None),
+            "quantity":       quantity,
             "period":         None,
             "payment_method": None
         },
@@ -400,15 +400,14 @@ def _semantic_frame_from_rules(input_text: str, catalog: list):
     if goal in ["PURCHASE", "RESTOCK"]:
         if not product:     ambiguities.append("product")
         if not size_ml:     ambiguities.append("size_ml")
-    if goal == "RESTOCK" and not quantity:
-        ambiguities.append("quantity")
+        if not quantity:    ambiguities.append("quantity")
     if goal == "REPORT_CHECK" and not period_data:
         ambiguities.append("period")
 
     entities = {
         "product":        product,
         "size_ml":        size_ml,
-        "quantity":       quantity if quantity else (1 if goal == "PURCHASE" else None),
+        "quantity":       quantity,
         "period":         period_data["label"] if period_data else None,
         "start_date":     period_data["start_date"] if period_data else None,
         "end_date":       period_data["end_date"] if period_data else None,
@@ -542,7 +541,7 @@ Format output JSON:
         if goal in ["PURCHASE", "RESTOCK"] and not entities.get("size_ml"):
             if "size_ml" not in ambiguities:
                 ambiguities.append("size_ml")
-        if goal == "RESTOCK" and not entities.get("quantity"):
+        if goal in ["PURCHASE", "RESTOCK"] and not entities.get("quantity"):
             if "quantity" not in ambiguities:
                 ambiguities.append("quantity")
         if goal == "REPORT_CHECK" and not entities.get("period"):
