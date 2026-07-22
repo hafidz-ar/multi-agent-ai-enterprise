@@ -193,38 +193,59 @@ Jawab pertanyaan pelanggan di atas berdasarkan data dari sistem. Sesuaikan nada 
         }
 
 
+def _get_catalog_context_for_prompt():
+    try:
+        import sqlite3
+        conn = sqlite3.connect(config.DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT name, brand, category, gender, price_idr FROM perfume_catalog ORDER BY brand ASC LIMIT 25")
+        rows = c.fetchall()
+        conn.close()
+        lines = []
+        for r in rows:
+            lines.append(f"- {r[0]} (Brand: {r[1]}, Kategori: {r[2]}, Gender: {r[3]}, Rp{r[4]:,})")
+        return "\n".join(lines)
+    except Exception:
+        return "- Tom Ford Itaque Intense\n- YSL Est Aqua\n- Chanel Hic Noir\n- Dior Architecto Noir\n- Le Labo Porro Noir"
+
 def _handle_no_service(state, user_input, goal, ambiguities, start_time):
     """
-    Dipanggil ketika tidak ada ServiceResult — misalnya GREETING atau UNKNOWN.
-    Tetap panggil LLM agar responsnya natural, bukan hardcode 'Halo!'.
-    Jika user sudah pernah disapa, jangan mulai dengan sapaan ulang.
+    Dipanggil ketika tidak ada ServiceResult — misalnya GREETING, RECOMMENDATION, atau UNKNOWN.
+    HANYA boleh merekomendasikan/membahas produk yang ada dalam sistem database.
     """
     conv_ctx    = state.get("conversation_context", {})
     has_greeted = conv_ctx.get("has_greeted", False)
     history     = state.get("conversation_history", [])
     history_str = _build_history_prompt(history, limit=COORDINATOR_CONTEXT_WINDOW)
+    catalog_str = _get_catalog_context_for_prompt()
 
     try:
         llm = ChatGroq(
             model=config.LLM_MODEL,
             api_key=config.GROQ_API_KEY,
-            temperature=0.5
+            temperature=0.3
         )
         greeting_rule = (
             "Jangan memulai dengan sapaan 'Halo' atau 'Selamat datang' "
             "karena pelanggan sudah pernah disambut sebelumnya."
             if has_greeted else
-            "Sambut pelanggan dengan hangat dan wajar."
+            "Sambut pelanggan dengan hangat dan wajar sebagai AI Assistant resmi Parfum Enterprise."
         )
         history_section = f"\nRiwayat Percakapan:\n{history_str}" if history_str else ""
 
-        system_msg = SystemMessage(content=f"""Kamu adalah asisten toko parfum Parfum Enterprise yang ramah dan profesional.
+        system_msg = SystemMessage(content=f"""Kamu adalah AI Assistant resmi toko Parfum Enterprise.
 {greeting_rule}
-Sebutkan secara ringkas bahwa kamu siap membantu mengecek harga, stok parfum, laporan penjualan, atau membantu proses pembelian.
-ATURAN KETAT:
-- DILARANG menggunakan pilihan slash seperti 'pagi/siang/malam' atau opsi ganda.
-- JANGAN menyebut kata teknis seperti 'sistem', 'service', 'JSON', atau 'API'.
-- Gunakan riwayat percakapan untuk menjaga kesinambungan, jangan ulangi pertanyaan yang sudah dijawab.""")
+
+BATASAN DAN ATURAN SISTEM KETAT:
+1. KATALOG RESMI PARFUM ENTERPRISE:
+{catalog_str}
+
+2. JIKA PELANGGAN MEMINTA REKOMENDASI ATAU MENANYAKAN PRODUK:
+   - Kamu HANYA BOLEH merekomendasikan atau menyebutkan produk yang ADA DALAM DAFTAR KATALOG RESMI DI ATAS.
+   - DILARANG KERAS merekomendasikan atau menyebutkan merk/produk luar di luar katalog sistem (seperti Baccarat Rouge, Dior Sauvage, Bleu de Chanel, Creed Aventus, Axe, dsb).
+3. JIKA PELANGGAN MENANYAKAN TOPIK DI LUAR TOKO PARFUM (misal olahraga, politik, cuaca, masakan, dsb):
+   - Sampaikan dengan sopan bahwa kamu adalah AI Assistant Parfum Enterprise dan berikan bantuan seputar layanan toko parfum kami (cek harga, cek stok, laporan, dan rekomendasi parfum dari katalog kami).
+4. Gunakan bahasa Indonesia yang hangat, profesional, langsung pada intinya, dan hindari kata-kata teknis (seperti JSON, API, Service, Database).""")
 
         human_msg = HumanMessage(content=f"Pelanggan berkata: \"{user_input}\"{history_section}")
 
