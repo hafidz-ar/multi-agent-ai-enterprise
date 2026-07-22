@@ -404,16 +404,16 @@ def _semantic_frame_from_rules(input_text: str, catalog: list):
         goal = "INVENTORY_VALUE_CHECK"
     elif any(w in text for w in ["status po", "purchase order", "po berjalan"]):
         goal = "PO_CHECK"
-    elif any(w in text for w in ["bahan baku", "formula", "komposisi", "piramida notes", "top note", "heart note", "base note"]):
-        goal = "FORMULA_CHECK"
     elif any(w in text for w in ["supplier", "pemasok"]):
         goal = "SUPPLIER_CHECK"
     elif any(w in text for w in ["stok di bawah", "hampir habis", "stok menipis", "stok <", "kurang dari 5", "di bawah 5"]):
         goal = "LOW_STOCK_CHECK"
     elif any(w in text for w in ["reorder", "restock", "restok", "produksi", "tambah stok",
                                 "buat stok", "order stok", "pesan stok", "stock masuk",
-                                "stok baru", "supply", "pengiriman", "stock in", "masuk barang"]):
+                                "stok baru", "supply", "pengiriman", "stock in", "masuk barang", "mencukupi"]):
         goal = "RESTOCK"
+    elif any(w in text for w in ["piramida notes", "top note", "heart note", "base note", "komposisi notes", "formula"]):
+        goal = "FORMULA_CHECK"
     elif any(w in text for w in ["cek harga", "berapa harga", "harga berapa",
                                   "seberapa mahal", "harga barang", "bandingkan harga",
                                   "harganya", "perbedaan harga"]):

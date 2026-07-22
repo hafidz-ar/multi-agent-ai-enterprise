@@ -16,6 +16,22 @@ def run(state: AgentState) -> dict:
     perfume_id = business_context.get("perfume_id") 
     
     if not perfume_id:
+        p_name = (
+            business_context.get("product_name") 
+            or state.get("transaction_context", {}).get("product") 
+            or state.get("semantic_frame", {}).get("entities", {}).get("product")
+        )
+        if p_name:
+            conn = sqlite3.connect(config.DB_PATH)
+            c = conn.cursor()
+            c.execute("SELECT perfume_id FROM perfume_catalog WHERE name LIKE ?", (f"%{p_name}%",))
+            r = c.fetchone()
+            conn.close()
+            if r:
+                perfume_id = r[0]
+                business_context["perfume_id"] = perfume_id
+
+    if not perfume_id:
         res = {
             "execution_id": exec_id,
             "service_name": "ProductionService",
@@ -68,8 +84,18 @@ def run(state: AgentState) -> dict:
         c.execute("SELECT ingredient_id, stock_available FROM ingredients")
         ingredients_stock = {row[0]: row[1] for row in c.fetchall()}
         
-        size_ml = business_context.get("size_ml", 50)
-        requested_qty = business_context.get("requested_qty", 1)
+        size_ml = (
+            business_context.get("size_ml") 
+            or state.get("transaction_context", {}).get("size_ml") 
+            or state.get("semantic_frame", {}).get("entities", {}).get("size_ml") 
+            or 50
+        )
+        requested_qty = (
+            business_context.get("requested_qty") 
+            or state.get("transaction_context", {}).get("qty") 
+            or state.get("semantic_frame", {}).get("entities", {}).get("quantity") 
+            or 100
+        )
         
         c.execute("SELECT quantity_available, reorder_point FROM inventory WHERE perfume_id = ? AND size_ml = ?", (perfume_id, size_ml))
         inv_row = c.fetchone()

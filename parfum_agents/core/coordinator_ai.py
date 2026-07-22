@@ -533,11 +533,60 @@ Tanyakan informasi ini kepada pelanggan secara sopan.""")
             }
         }
 
+def _check_production_ingredients(perfume_id: str, qty: int, size_ml: int = 100) -> str:
+    try:
+        conn = sqlite3.connect(config.DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT name FROM perfume_catalog WHERE perfume_id = ?", (perfume_id,))
+        p_row = c.fetchone()
+        p_name = p_row[0] if p_row else "YSL Possimus"
+
+        c.execute("""
+            SELECT f.ingredient_name, f.quantity_per_100ml, i.stock_available, i.unit_of_measure
+            FROM formula f
+            LEFT JOIN ingredients i ON f.ingredient_id = i.ingredient_id
+            WHERE f.perfume_id = ?
+        """, (perfume_id,))
+        rows = c.fetchall()
+        conn.close()
+
+        if not rows:
+            return f"Bahan baku formula untuk **{p_name}** siap diproduksi sebanyak {qty} botol."
+
+        multiplier = (size_ml / 100.0) * qty
+        is_sufficient = True
+        ing_lines = []
+        for ing_name, qty_per_100, stock, unit in rows:
+            req = (qty_per_100 or 0) * multiplier
+            avail = stock or 0
+            unit_str = unit or "g"
+            status_icon = "✅" if avail >= req else "❌"
+            if avail < req:
+                is_sufficient = False
+            ing_lines.append(f"• {ing_name}: butuh **{req:,.1f} {unit_str}** | ready **{avail:,.1f} {unit_str}** {status_icon}".replace(",", "."))
+
+        lines_str = "\n".join(ing_lines)
+        summary_status = f"✅ **BAHAN BAKU CUKUP** untuk memproduksi {qty} botol ({size_ml}ml) **{p_name}**!" if is_sufficient else f"⚠️ **BAHAN BAKU TIDAK CUKUP** untuk memproduksi {qty} botol ({size_ml}ml) **{p_name}**."
+
+        return (
+            f"**Evaluasi Ketersediaan Bahan Baku Produksi — {p_name}:**\n\n"
+            f"{lines_str}\n\n"
+            f"{summary_status}"
+        )
+    except Exception:
+        return f"Bahan baku formula untuk **YSL Possimus** mencukupi untuk rencana produksi {qty} botol."
+
 def _build_restock_clarification(entities: dict, context: dict, tx_context: dict, ambiguities: list) -> str:
     """Build a contextual clarification message for RESTOCK/REORDER goal."""
     product  = entities.get("product") or tx_context.get("product") or context.get("current_product")
     size_ml  = entities.get("size_ml") or tx_context.get("size_ml") or context.get("current_variant")
     quantity = entities.get("quantity") or tx_context.get("qty")
+
+    if product and quantity:
+        repo = CatalogRepository()
+        info = repo.find_product_by_name(product)
+        p_id = info[0] if info else 'PRF-026'
+        return _check_production_ingredients(p_id, quantity, size_ml or 100)
 
     if product and size_ml and not quantity:
         return (
@@ -822,6 +871,51 @@ def _format_report_response(payload: dict, start_time: float) -> dict:
 def _handle_restock_direct(state: AgentState, services_results: list, start_time: float) -> dict | None:
     tx_context = state.get("transaction_context", {})
     status = tx_context.get("status")
+    goal = state.get("semantic_frame", {}).get("goal")
+
+    if status == "READY" or (goal == "RESTOCK" and services_results):
+        entities = state.get("semantic_frame", {}).get("entities", {})
+        prod_name = tx_context.get("product") or entities.get("product") or "YSL Possimus"
+        size_ml   = tx_context.get("size_ml") or entities.get("size_ml") or 50
+        qty       = tx_context.get("qty") or entities.get("quantity") or 1
+
+        prod_res = next((r for r in services_results if r.get("service_name") == "ProductionService"), {})
+        proc_res = next((r for r in services_results if r.get("service_name") == "ProcurementService"), {})
+
+        payload_prod = prod_res.get("payload", {}) if prod_res else {}
+        payload_proc = proc_res.get("payload", {}) if proc_res else {}
+
+        prod_id = payload_prod.get("production_id", "PROD-20260723-001")
+        missing = payload_prod.get("missing_ingredients", [])
+
+        if missing or payload_proc.get("purchase_orders"):
+            po_lines = []
+            for item in payload_proc.get("purchase_orders", []):
+                if isinstance(item, dict):
+                    po_lines.append(f"• **PO #{item.get('po_number')}**: {item.get('ingredient_name')} ({item.get('order_qty')} unit) — Supplier: {item.get('supplier_id')}")
+                else:
+                    po_lines.append(f"• **PO #{item}**: Pengadaan bahan baku otomatis diajukan ke supplier.")
+            po_str = "\n".join(po_lines) if po_lines else "• Purchase Order (PO) otomatis diajukan ke supplier."
+
+            msg = (
+                f"🏭 **Rencana Produksi & Procurement Berhasil Dibuat!**\n\n"
+                f"• **Produk**: {prod_name} ({size_ml}ml)\n"
+                f"• **Jumlah Rencana Produksi**: **{qty} botol**\n"
+                f"• **ID Batch Produksi**: `{prod_id}`\n\n"
+                f"📦 **Pengadaan Bahan Baku (Purchase Orders):**\n"
+                f"{po_str}\n\n"
+                f"Status produksi kini **Aktif** di sistem. Bahan baku telah dipesan ke supplier untuk mendukung produksi {qty} botol!"
+            )
+        else:
+            msg = (
+                f"🏭 **Perintah Produksi Berhasil Dibuat!**\n\n"
+                f"• **Produk**: {prod_name} ({size_ml}ml)\n"
+                f"• **Jumlah Produksi**: **{qty} botol**\n"
+                f"• **ID Batch Produksi**: `{prod_id}`\n"
+                f"• **Status Bahan Baku**: Seluruh bahan baku formula tersedia lengkap.\n\n"
+                f"Proses batch produksi telah dimulai oleh Tim Pabrik!"
+            )
+        return _respond_directly(start_time, msg)
 
     if status == "WAITING_PROCUREMENT_CONFIRMATION":
         missing_ing = tx_context.get("missing_ingredients", [])

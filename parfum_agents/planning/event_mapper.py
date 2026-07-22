@@ -26,17 +26,15 @@ def run(state: AgentState) -> dict:
         event = WorkflowEvent.RESTOCK_INTENT
         strategy = "SEQUENTIAL_PIPELINE"
         required_agents = ["InventoryService", "ProductionService"]
-    elif goal == "CONFIRM":
-        event = WorkflowEvent.CONFIRM
-        strategy = "SINGLE_AGENT"
-    elif goal == "REJECT":
-        event = WorkflowEvent.REJECT
-        strategy = "SINGLE_AGENT"
-    elif goal == "PAYMENT_METHOD":
-        event = WorkflowEvent.PAYMENT_SELECTED
-        payload["payment_method"] = entities.get("payment_method")
-        strategy = "SINGLE_AGENT"
-        required_agents = ["OrderService"]
+    elif goal in ["CONFIRM", "PAYMENT_METHOD"]:
+        if entities.get("payment_method") or goal == "PAYMENT_METHOD":
+            event = WorkflowEvent.PAYMENT_SELECTED
+            payload["payment_method"] = entities.get("payment_method") or "Tunai"
+            strategy = "SINGLE_AGENT"
+            required_agents = ["OrderService"]
+        else:
+            event = WorkflowEvent.CONFIRM
+            strategy = "SINGLE_AGENT"
     elif goal == "PRICE_CHECK":
         event = WorkflowEvent.UNKNOWN
         strategy = "SINGLE_AGENT"

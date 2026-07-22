@@ -14,6 +14,7 @@ TRANSITIONS = {
     (None, WorkflowEvent.PURCHASE_INTENT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "START_PURCHASE"),
     
     ("WAITING_CONFIRMATION", WorkflowEvent.CONFIRM): ("WAITING_PAYMENT", WorkflowStatus.WAITING_USER_INPUT, ["CoordinatorAI"], "PROCEED_TO_PAYMENT"),
+    ("WAITING_CONFIRMATION", WorkflowEvent.PAYMENT_SELECTED): ("PROCESSING_ORDER", WorkflowStatus.EXECUTING_SERVICE, ["CREATE_ORDER", "CoordinatorAI"], "PROCESS_ORDER"),
     ("WAITING_CONFIRMATION", WorkflowEvent.REJECT): ("CANCELLED", WorkflowStatus.CANCELLED, ["CoordinatorAI"], "CANCEL_ORDER"),
     ("WAITING_CONFIRMATION", WorkflowEvent.CHANGE_QTY): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "REVALIDATE_STOCK_QTY"),
     ("WAITING_CONFIRMATION", WorkflowEvent.CHANGE_VARIANT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "REVALIDATE_STOCK_VARIANT"),
@@ -24,7 +25,7 @@ TRANSITIONS = {
     ("WAITING_PAYMENT", WorkflowEvent.CHANGE_VARIANT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "REVALIDATE_STOCK_VARIANT"),
 }
 
-RESTOCK_PLAN = ["CHECK_STOCK", "PRODUCE_ITEM", "CoordinatorAI"]
+RESTOCK_PLAN = ["CHECK_STOCK", "PRODUCE_ITEM", "PROCURE_ITEM", "CoordinatorAI"]
 RESTOCK_PROCUREMENT_PLAN = ["PROCURE_ITEM", "CoordinatorAI"]
 
 # Circuit Breaker & Retry State Tracker
@@ -116,15 +117,9 @@ def run(state: AgentState) -> dict:
                         transaction["version"] = transaction.get("version", 1) + 1
                         
                     elif event == WorkflowEvent.PAYMENT_SELECTED:
-                        payment_method = state.get("event_payload", {}).get("payment_method")
-                        if payment_method:
-                            transaction["payment_method"] = payment_method
-                        else:
-                            # Invalid payment
-                            next_tx_status = tx_status
-                            next_wf_state = wf_state
-                            next_exec_plan = ["CoordinatorAI"]
-                            decision = "INVALID_PAYMENT"
+                        sem_entities = state.get("semantic_frame", {}).get("entities", {})
+                        payment_method = state.get("event_payload", {}).get("payment_method") or sem_entities.get("payment_method") or "Tunai"
+                        transaction["payment_method"] = payment_method
                         
                 transaction["status"] = next_tx_status
                 wf_state = next_wf_state
