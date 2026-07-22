@@ -62,3 +62,17 @@ class CatalogRepository:
             ]
         except Exception:
             return []
+
+    def get_brand_map(self) -> dict[str, list[str]]:
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            c.execute("SELECT brand, name FROM perfume_catalog")
+            rows = c.fetchall()
+            conn.close()
+            brand_map = {}
+            for brand, name in rows:
+                brand_map.setdefault(brand, []).append(name)
+            return brand_map
+        except Exception:
+            return {}

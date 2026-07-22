@@ -398,27 +398,39 @@ def _semantic_frame_from_rules(input_text: str, catalog: list):
     goal = None
 
     # ── High-specificity patterns checked FIRST ──────────────────────────
-    if any(w in text for w in ["reorder", "restock", "restok", "produksi", "tambah stok",
+    if any(w in text for w in ["apakah otomatis", "apakah sistem otomatis", "apakah po otomatis", "otomatis reorder", "otomatis po", "otomatis buat po"]):
+        goal = "FAQ_FEATURE"
+    elif any(w in text for w in ["nilai inventori", "nilai stok", "total nilai inventori"]):
+        goal = "INVENTORY_VALUE_CHECK"
+    elif any(w in text for w in ["status po", "purchase order", "po berjalan"]):
+        goal = "PO_CHECK"
+    elif any(w in text for w in ["bahan baku", "formula", "komposisi", "piramida notes", "top note", "heart note", "base note"]):
+        goal = "FORMULA_CHECK"
+    elif any(w in text for w in ["supplier", "pemasok"]):
+        goal = "SUPPLIER_CHECK"
+    elif any(w in text for w in ["stok di bawah", "hampir habis", "stok menipis", "stok <", "kurang dari 5", "di bawah 5"]):
+        goal = "LOW_STOCK_CHECK"
+    elif any(w in text for w in ["reorder", "restock", "restok", "produksi", "tambah stok",
                                 "buat stok", "order stok", "pesan stok", "stock masuk",
                                 "stok baru", "supply", "pengiriman", "stock in", "masuk barang"]):
         goal = "RESTOCK"
     elif any(w in text for w in ["cek harga", "berapa harga", "harga berapa",
                                   "seberapa mahal", "harga barang", "bandingkan harga",
-                                  "harganya"]):
-        # Only if the word "harga" is present alone with no product intent
-        # — already specific enough
+                                  "harganya", "perbedaan harga"]):
         goal = "PRICE_CHECK"
     elif any(w in text for w in ["cek stok", "stok ada", "ada stok", "stok berapa",
                                   "berapa stok", "ketersediaan", "ready", "tersedia",
                                   "masih ada", "ada gak"]):
         goal = "STOCK_CHECK"
     elif any(w in text for w in ["laporan", "report", "rekap", "penjualan", "sales",
-                                  "omset", "statistik", "ringkasan", "berapa terjual"]):
+                                  "omset", "pendapatan", "statistik", "ringkasan", "berapa terjual",
+                                  "top 3", "terlaris", "produk terlaris", "bulan ini vs"]):
         goal = "REPORT_CHECK"
-    elif any(w in text for w in ["rekomendasi", "recommend", "suggest", "saran",
+    elif any(w in text for w in ["unisex", "produk unisex", "parfum unisex", "rekomendasi", "recommend", "suggest", "saran",
                                   "cocok untuk", "parfum untuk", "parfum pria",
-                                  "parfum wanita", "parfum unisex", "terjangkau",
-                                  "harga yang terjangkau", "yang murah", "paling murah"]):
+                                  "parfum wanita", "terjangkau",
+                                  "harga yang terjangkau", "yang murah", "paling murah",
+                                  "woody", "floral", "citrus", "oriental", "fresh"]):
         goal = "RECOMMENDATION"
     elif any(w in text for w in ["bantuan", "help", "bisa apa", "fitur", "apa saja",
                                   "apa aja", "cara pakai", "panduan", "tutorial"]):
@@ -665,19 +677,41 @@ Format output JSON:
 # Helpers — entity extraction
 # ---------------------------------------------------------------------------
 
+_KNOWN_BRANDS = ["ysl", "jo malone", "tom ford", "le labo", "hermes", "hermès", "dior", "chanel", "gucci", "byredo", "burberry"]
+
 def _extract_product_from_catalog(text: str, catalog: list):
-    compact = re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
-    for product in catalog:
-        if product.lower() in compact:
+    text_lower = text.lower()
+    compact = re.sub(r"[^a-z0-9]+", " ", text_lower).strip()
+
+    # Detect if any brand name is explicitly present in user text
+    detected_brand = None
+    for brand in _KNOWN_BRANDS:
+        if re.search(r'\b' + re.escape(brand) + r'\b', compact):
+            detected_brand = brand
+            break
+
+    # If brand detected, filter catalog candidates to those matching the brand
+    candidates = catalog
+    if detected_brand:
+        brand_matches = [p for p in catalog if detected_brand in p.lower()]
+        if brand_matches:
+            candidates = brand_matches
+
+    # 1. Substring match on candidate products
+    for product in candidates:
+        if product.lower() in text_lower:
             return product
+
+    # 2. Token overlap fallback
     text_tokens = set(compact.split())
     best_match, best_score = None, 0
-    for product in catalog:
-        product_tokens = set(product.lower().split())
+    for product in candidates:
+        product_tokens = set(re.sub(r"[^a-z0-9]+", " ", product.lower()).split())
         score = len(product_tokens & text_tokens)
         if score > best_score:
             best_match, best_score = product, score
-    return best_match if best_score >= 2 else None
+
+    return best_match if best_score >= 1 else (candidates[0] if (detected_brand and candidates) else None)
 
 
 def _match_product_to_catalog(product: str, catalog: list):
