@@ -4,15 +4,14 @@ import time
 import uuid
 import sqlite3
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
-from parfum_agents.models import AgentState, ProductionStatus, ResultType, Severity
+from models import AgentState, ProductionStatus, ResultType, Severity
 
 def run(state: AgentState) -> dict:
     start_time = time.time()
     exec_id = str(uuid.uuid4())
     
-    # Normally read from context
     business_context = state.get("business_context", {})
     perfume_id = business_context.get("perfume_id") 
     
@@ -41,7 +40,6 @@ def run(state: AgentState) -> dict:
         conn = sqlite3.connect(config.DB_PATH)
         c = conn.cursor()
         
-        # Ambil formula
         c.execute("SELECT ingredient_id, ingredient_name, quantity_per_100ml FROM formula WHERE perfume_id = ?", (perfume_id,))
         formulas = c.fetchall()
         
@@ -67,11 +65,9 @@ def run(state: AgentState) -> dict:
                 }
             }
             
-        # Ambil stok bahan baku saat ini
         c.execute("SELECT ingredient_id, stock_available FROM ingredients")
         ingredients_stock = {row[0]: row[1] for row in c.fetchall()}
         
-        # Ambil stok parfum (untuk menentukan qty_to_produce)
         size_ml = business_context.get("size_ml", 50)
         requested_qty = business_context.get("requested_qty", 1)
         
@@ -82,12 +78,9 @@ def run(state: AgentState) -> dict:
         else:
             current_stock, reorder_point = 0, 10
             
-        # Hitung kebutuhan produksi
         requested_qty = max(1, requested_qty)
         qty_to_produce = max(requested_qty, max(0, reorder_point - current_stock))
         
-        # Karena formula adalah per 100ml, dan jika size_ml bukan 100ml, 
-        # kita sesuaikan. Misal: 50ml berarti 0.5 dari formula per 100ml per botol.
         multiplier = (size_ml / 100.0) * qty_to_produce
         
         missing_ingredients = []
@@ -116,19 +109,16 @@ def run(state: AgentState) -> dict:
         if missing_ingredients:
             status = ProductionStatus.INSUFFICIENT_INGREDIENTS
             decision_log = "INSUFFICIENT_INGREDIENTS"
-            # Return early if insufficient
             conn.close()
         else:
             status = ProductionStatus.READY
             decision_log = "PRODUCTION_EXECUTED"
             
-            # --- BEGIN TRANSACTION FOR PRODUCTION ---
             import datetime
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             po_id = str(uuid.uuid4())
             po_no = f"PRD-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
             
-            # 1. Insert Header
             c.execute("""
                 INSERT INTO production_orders (
                     id, production_no, perfume_id, variant_id, qty_requested, 
@@ -138,7 +128,6 @@ def run(state: AgentState) -> dict:
             """, (po_id, po_no, perfume_id, str(size_ml), qty_to_produce, 
                   qty_to_produce, 'COMPLETED', 'v1', 'AUTO', 'AI Agent', now, now))
                   
-            # 2. Loop Items
             for item in production_items:
                 item_id = str(uuid.uuid4())
                 c.execute("""
@@ -147,12 +136,10 @@ def run(state: AgentState) -> dict:
                     ) VALUES (?, ?, ?, ?, ?, ?)
                 """, (item_id, po_id, item["ingredient_id"], item["required"], item["required"], 'ml'))
                 
-                # 3. Update Ingredients
                 c.execute("""
                     UPDATE ingredients SET stock_available = stock_available - ? WHERE ingredient_id = ?
                 """, (item["required"], item["ingredient_id"]))
                 
-                # 4. Insert Ingredient Ledger
                 qty_before = ingredients_stock.get(item["ingredient_id"], 0)
                 qty_after = qty_before - item["required"]
                 c.execute("""
@@ -161,15 +148,12 @@ def run(state: AgentState) -> dict:
                         reference_type, reference_id, created_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (str(uuid.uuid4()), item["ingredient_id"], 'CONSUMPTION', qty_before, -item["required"], qty_after, 'PRODUCTION', po_id, now))
-                # Update local tracker for next iteration
                 ingredients_stock[item["ingredient_id"]] = qty_after
                 
-            # 5. Update Inventory
             c.execute("""
                 UPDATE inventory SET quantity_available = quantity_available + ? WHERE perfume_id = ? AND size_ml = ?
             """, (qty_to_produce, perfume_id, size_ml))
             
-            # 6. Insert Inventory Ledger
             c.execute("""
                 INSERT INTO inventory_transactions (
                     id, product_id, size_ml, movement_type, qty_before, qty_change, qty_after,

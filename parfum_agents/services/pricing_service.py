@@ -4,15 +4,14 @@ import time
 import uuid
 import sqlite3
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
-from parfum_agents.models import AgentState, ResultType, Severity
+from models import AgentState, ResultType, Severity
 
 def run(state: AgentState) -> dict:
     start_time = time.time()
     exec_id = str(uuid.uuid4())
     
-    # Pricing bisa memakai entity dari semantic frame atau conversation_context
     semantic_frame = state.get("semantic_frame", {})
     entities = semantic_frame.get("entities", {})
     context = state.get("conversation_context", {})
@@ -46,7 +45,6 @@ def run(state: AgentState) -> dict:
         conn = sqlite3.connect(config.DB_PATH)
         c = conn.cursor()
         
-        # Pertama, dapatkan perfume_id dari nama
         c.execute("SELECT perfume_id, name FROM perfume_catalog WHERE name LIKE ?", (f"%{product_name}%",))
         prod = c.fetchone()
         
@@ -75,7 +73,6 @@ def run(state: AgentState) -> dict:
         perfume_id = prod[0]
         actual_name = prod[1]
         
-        # Cari harga dengan JOIN antara inventory dan perfume_catalog
         if requested_size:
             c.execute("""
                 SELECT i.size_ml, p.price_idr 

@@ -4,7 +4,7 @@ import time
 import sqlite3
 from langchain_groq import ChatGroq
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
 from parfum_agents.tools.db_tools import query_sales
 from parfum_agents.tools.utils import log_evaluation

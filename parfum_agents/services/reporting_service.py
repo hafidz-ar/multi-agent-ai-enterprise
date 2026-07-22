@@ -5,12 +5,11 @@ import uuid
 import sqlite3
 from datetime import datetime, timedelta
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
-from parfum_agents.models import AgentState, ResultType, Severity
+from models import AgentState, ResultType, Severity
 
 def _get_data_date_range(conn):
-    """Ambil tanggal terlama dan terbaru dari sales_history."""
     c = conn.cursor()
     c.execute("SELECT MIN(date), MAX(date) FROM sales_history")
     row = c.fetchone()
@@ -20,13 +19,7 @@ def _get_data_date_range(conn):
     max_date = datetime.strptime(row[1][:10], "%Y-%m-%d")
     return min_date, max_date
 
-
 def _resolve_period(period: str, conn=None):
-    """
-    Ubah label periode natural language menjadi tanggal SQL.
-    Jika data di DB berasal dari tahun yang berbeda (misal data 2024, 
-    tapi saat ini 2026), periode akan disesuaikan ke tahun data terbaru.
-    """
     today = datetime.now()
 
     if not period or period in ("all", None):
@@ -34,13 +27,11 @@ def _resolve_period(period: str, conn=None):
 
     p = period.lower()
 
-    # Deteksi tahun referensi dari data aktual
     ref_year = today.year
     ref_date = today
     if conn:
         min_d, max_d = _get_data_date_range(conn)
         if max_d and max_d.year != today.year:
-            # Data berasal dari tahun berbeda — gunakan max_date sebagai referensi
             ref_date = max_d
             ref_year = max_d.year
 
@@ -69,7 +60,6 @@ def _resolve_period(period: str, conn=None):
 
     return period, None, ()
 
-
 def run(state: AgentState) -> dict:
     start_time = time.time()
     exec_id = str(uuid.uuid4())
@@ -89,12 +79,8 @@ def run(state: AgentState) -> dict:
             date_clause  = "DATE(date) BETWEEN ? AND ?"
             date_params  = (start_date, end_date)
         else:
-            # Resolve periode SETELAH buka koneksi agar bisa detect range data aktual
             period_label, date_clause, date_params = _resolve_period(period_raw, conn)
 
-        # ------------------------------------------------------------------ #
-        # 1. Metrik Penjualan — difilter berdasarkan PERIODE                 #
-        # ------------------------------------------------------------------ #
         if date_clause:
             c.execute(
                 f"SELECT COUNT(*), COALESCE(SUM(quantity_sold), 0), COALESCE(SUM(total_revenue_idr), 0) "
@@ -111,7 +97,6 @@ def run(state: AgentState) -> dict:
         total_qty_sold      = row[1] or 0
         total_sales_revenue = row[2] or 0
 
-        # Top 3 produk terlaris dalam periode
         if date_clause:
             c.execute(
                 f"SELECT perfume_name, SUM(quantity_sold) as qty FROM sales_history "
@@ -125,9 +110,6 @@ def run(state: AgentState) -> dict:
             )
         top_products = [{"name": r[0], "qty_sold": r[1]} for r in c.fetchall()]
 
-        # ------------------------------------------------------------------ #
-        # 2. Metrik Inventaris — snapshot saat ini (tidak bergantung periode) #
-        # ------------------------------------------------------------------ #
         c.execute("""
             SELECT COALESCE(sum(i.quantity_available * p.price_idr), 0)
             FROM inventory i

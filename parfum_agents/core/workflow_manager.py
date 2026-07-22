@@ -2,9 +2,9 @@ import os
 import sys
 import time
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
-from parfum_agents.models import AgentState, WorkflowStatus, WorkflowEvent
+from models import AgentState, WorkflowStatus, WorkflowEvent
 from parfum_agents.tools.utils import generate_transaction_id
 from parfum_agents.event_bus import EventBus
 

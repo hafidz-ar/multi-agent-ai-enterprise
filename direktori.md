@@ -1,89 +1,103 @@
-# 📁 Struktur Direktori Proyek — Enterprise Multi-Agent AI Assistant
+# 📁 Struktur Folder Proyek Enterprise — AI Parfum Assistant
 
-Dokumen ini berisi gambaran lengkap struktur folder dan berkas dalam proyek **Parfum Enterprise Multi-Agent System**.
+Dokumen ini menjelaskan struktur folder dan modul lengkap dari proyek **Enterprise AI Parfum Assistant** yang menggunakan arsitektur Multi-Agent (Planner-Executor), LangGraph workflow, FSM resilience, 3-tier memory system, dan Event-Driven Pub/Sub architecture.
+
+---
 
 ```text
 UAS/
-├── .agents/                        # Konfigurasi & Agent Skill definitions
-├── api/                            # Layer FastAPI Endpoints
-│   └── main.py                     # Entry point FastAPI, CORS, & Endpoint API RESTful
-├── config.py                       # Konfigurasi global (Database Path, LLM Groq, Timeout, Log Path)
-├── dashboard/                      # UI Web Dashboard Enterprise
-│   ├── css/                        # Custom CSS & Tailwind styles
-│   ├── js/                         # Logic frontend SPA
-│   │   └── app.js                  # Frontend controller (Chat, Metrics, Inventory, Procurement)
-│   ├── index.html                  # Antarmuka Dashboard Enterprise Utama
-│   ├── workflow_graph.html         # Visualisasi grafis alur kerja LangGraph (Interactive HTML)
-│   └── workflow_graph.png          # Visualisasi alur kerja dalam format gambar
-├── data/                           # Layer Penyimpanan Data System
-│   ├── database/                   # SQLite Relational Database
-│   │   └── parfum_enterprise.db    # Database SQLite utama (Sales, Inventory, Ingredients, POs, Catalogs)
-│   ├── raw/                        # Dataset mentah CSV/TXT & FAQ SOP
-│   └── vectorstore/                # ChromaDB Vector Store untuk RAG
-├── logs/                           # System Logs & Audit Evaluation
-│   └── evaluation.log              # Log performa, latensi, Trace ID, dan status eksekusi agen
-├── parfum_agents/                  # 🤖 CORE ENGINE: Multi-Agent Architecture
-│   ├── __init__.py                 # Module initializer
-│   ├── business_insight_agent.py   # Agen Analisis Bisnis (Trend Sales & Margin)
-│   ├── conversation_manager.py     # 🚀 Front-Door System Command Handler (reset, help, cancel, menu)
-│   ├── coordinator_ai.py           # 🎓 Coordinator AI & Respon Natural Synthesis (LLM Final Formatting)
-│   ├── event_bus.py                # ⚡ In-Memory Pub/Sub Event Bus Architecture (Decoupled Messaging)
-│   ├── event_mapper.py             # 🎯 Enhanced Event Mapper (Priority, Strategy & Required Agents)
-│   ├── inventory_service.py        # 📦 Specialist Agent: Manajemen Stok & Gudang
-│   ├── memory_service.py           # 🧠 3-Tier Memory (Session Memory, Preference Memory, Knowledge Cache)
-│   ├── models.py                   # 📐 Data Models, Enums, TypedDicts & Standardized AgentResult Schema
-│   ├── nlu_service.py              # 🔍 5-Layer NLU Engine (Intent, Entity Recognition & Coreference)
-│   ├── order_service.py            # 🛒 Specialist Agent: Pemrosesan Transaksi Penjualan
-│   ├── planner_cache.py            # ⚡ In-Memory Execution Plan Cache untuk DAG Planner
-│   ├── planner_service.py          # 📋 DAG Execution Planner (Parallel & Sequential Stage Planning)
-│   ├── pricing_service.py          # 💰 Specialist Agent: Kalkulasi & Cek Harga Varian
-│   ├── procurement_service.py      # 🏭 Specialist Agent: Reorder & Purchase Order Bahan Baku
-│   ├── production_service.py       # 🧪 Specialist Agent: Formulasi & Estimasi Produksi
-│   ├── reporting_service.py        # 📊 Specialist Agent: Agregasi Laporan Penjualan & Inventaris
-│   ├── sales_ai.py                 # Agen Asisten Penjualan & Promosi
-│   ├── workflow_manager.py         # ⚙️ FSM Workflow Manager (State Machine, Retry, Rollback, Circuit Breaker)
-│   └── tools/                      # Database & Vector DB Utility Handlers
+├── config/                      # ⚙️ Configuration Package
+│   ├── __init__.py              # Package re-exports
+│   ├── database.py              # Path database SQLite, ChromaDB vector store, logs
+│   ├── llm.py                   # Konfigurasi LLM (Groq API, model selection, embeddings)
+│   └── settings.py              # System timeout, FSM thresholds, developer flags
+│
+├── models/                      # 📐 Domain Schemas & Enums Package
+│   ├── __init__.py              # Package re-exports
+│   ├── events.py                # WorkflowEvent, WorkflowStatus, ResultType, Severity
+│   ├── results.py               # ServiceResult & AgentResult TypedDicts
+│   └── state.py                 # LangGraph AgentState, TransactionContext, SessionContext
+│
+├── prompts/                     # 📝 Externalized Prompt Templates
+│   ├── coordinator.txt          # System prompt untuk CoordinatorAI
+│   ├── clarification.txt        # System prompt untuk klarifikasi slot NLU
+│   ├── recommendation.txt       # System prompt & aturan katalog resmi rekomendasi
+│   └── sales.txt                # System prompt untuk SalesAI
+│
+├── parfum_agents/               # 🤖 Specialist & Orchestrator Agents Package
+│   ├── __init__.py              # Top-level re-exports for 100% backward compatibility
+│   ├── event_bus.py             # In-memory Pub/Sub Event Bus architecture
+│   ├── models.py                # Wrapper re-export ke package models
+│   ├── core/                    # 🧠 Core Agent Engine & Orchestration
+│   │   ├── __init__.py
+│   │   ├── conversation_manager.py # Front-door command handler (reset, help, cancel, 0ms LLM bypass)
+│   │   ├── workflow_manager.py     # FSM state machine (retry, rollback, circuit breaker)
+│   │   └── coordinator_ai.py       # Final response generator & catalog grounding
+│   │
+│   ├── memory/                  # 💾 3-Tier Memory Architecture
+│   │   ├── __init__.py
+│   │   └── memory_service.py       # Working session memory, preference memory, knowledge cache
+│   │
+│   ├── planning/                # 🗺️ Intent Mapping & DAG Execution Planning
+│   │   ├── __init__.py
+│   │   ├── event_mapper.py         # NLU output -> WorkflowEvent & strategy (Single vs Multi-Agent Parallel)
+│   │   ├── planner_service.py      # DAG execution planner (clarification gating)
+│   │   └── planner_cache.py        # In-memory execution plan cache
+│   │
+│   ├── nlu/                     # 🔤 Natural Language Understanding Engine
+│   │   ├── __init__.py
+│   │   └── nlu_service.py          # 5-Layer NLU engine (Slot-filling, coref, rules, LLM fallback)
+│   │
+│   ├── services/                # 🛠️ Business Domain Specialist Services
+│   │   ├── __init__.py
+│   │   ├── inventory_service.py    # Stock check & reorder point validation
+│   │   ├── pricing_service.py      # Price check & size calculation
+│   │   ├── procurement_service.py  # Purchase order (PO) generation & supplier lookup
+│   │   ├── production_service.py   # Work order (WO) generation & ingredient ledger
+│   │   ├── reporting_service.py    # Sales history analytics & period-filtered report
+│   │   └── order_service.py        # Transaction execution & inventory deduction
+│   │
+│   ├── business/                # 💼 Business Intelligence & Sales Agents
+│   │   ├── __init__.py
+│   │   ├── sales_ai.py             # Structured intent & entity extraction
+│   │   └── business_insight_agent.py # Executive summary & analytics insights
+│   │
+│   └── tools/                   # 🔧 Utility Tools & Data Access
 │       ├── __init__.py
-│       ├── db_tools.py             # Helper SQLite query execution
-│       ├── utils.py                # Logging evaluation metrics & Transaction ID Generator
-│       └── vector_tools.py         # Helper RAG ChromaDB Embeddings
-├── scripts/                        # Utility & Data Generator Scripts
-│   ├── build_vectorstore.py        # Script indexing data FAQ/SOP ke ChromaDB
-│   ├── check_api.py                # Diagnostic check API FastAPI
-│   ├── check_tables.py             # Quick check SQLite tables
-│   ├── generate_dataset.py         # Synthetic Dataset Generator (Only Integer Values)
-│   ├── load_to_sqlite.py           # Data loader CSV → SQLite
-│   ├── setup_database.py           # Database Schema Creator
-│   ├── test_components.py          # Unit testing komponen individual
-│   └── verify_db.py                # Verifikasi integritas data SQLite
-├── tests/                          # Automated Integration Test Suite
-│   ├── test_nlu.py                 # Test NLU intent & entity extraction
-│   ├── test_planner.py             # Test DAG Planner & routing logic
-│   ├── test_router.py              # Test routing dynamic branches
-│   └── test_workflow_manager.py    # Test FSM state transitions
-├── workflow/                       # LangGraph Orchestration Layer
-│   ├── __init__.py
-│   └── graph.py                    # Complete LangGraph StateGraph, Dynamic Routing & Parallel Branches
-├── Dockerfile                      # Docker containerization configuration (Port 8000)
-├── README.md                       # Dokumentasi Proyek
-├── requirements.txt                # Dependensi Python (LangChain, LangGraph, FastAPI, Groq, ChromaDB)
-└── visualize_graph.py              # Generator Diagram Visualisasi Workflow LangGraph
+│       ├── db_tools.py             # Raw SQL helpers
+│       ├── vector_tools.py         # Chroma VectorDB retrieval tools
+│       └── utils.py                # Transaction ID generator & evaluation logging
+│
+├── workflow/                    # 🔄 Workflow Orchestration Engine
+│   └── graph.py                 # LangGraph StateGraph pipeline, parallel branch execution, tracing
+│
+├── api/                         # 🌐 FastAPI REST API Service
+│   └── main.py                  # API Endpoints (/api/chat, /api/events/history, /api/planner/cache)
+│
+├── dashboard/                   # 🖥️ Enterprise Web Dashboard
+│   ├── index.html               # Multi-Agent Web Interface
+│   ├── styles.css               # Modern dark-mode glassmorphism styling
+│   └── app.js                   # Live event stream, metric gauges, and chat UI logic
+│
+├── data/                        # 🗄️ Database & Storage Layer
+│   ├── dataset.sqlite           # SQLite enterprise database
+│   ├── chroma_db/               # ChromaDB vector embedding store
+│   ├── processed/               # Placeholders for ETL processed dataset files
+│   └── exports/                 # Placeholders for generated report exports
+│
+├── docs/                        # 📚 Architecture & System Documentation
+│   └── .gitkeep
+│
+├── config.py                    # Root config wrapper (re-exports from config package)
+├── direktori.md                 # Dokumentasi struktur direktori proyek
+└── requirements.txt             # Dependency list
 ```
 
 ---
 
-## 📌 Penjelasan Singkat Sub-Sistem Utama
-
-### 1. `parfum_agents/` (Core Multi-Agent)
-Berisi seluruh spesialisasi agen dan komponen arsitektur modern V2:
-- **Front Door**: `conversation_manager.py` memproses command `reset`, `help`, `cancel` secara instan.
-- **Memory**: `memory_service.py` mengelola 3-Tier Memory (*Session*, *Preference*, *Knowledge Cache*).
-- **Reasoning & Planning**: `nlu_service.py` -> `event_mapper.py` -> `planner_service.py` -> `workflow_manager.py`.
-- **Specialist Agents**: `inventory_service.py`, `pricing_service.py`, `production_service.py`, `procurement_service.py`, `order_service.py`, `reporting_service.py`.
-- **Response Synthesis**: `coordinator_ai.py` menyintesis hasil agen terstruktur menjadi bahasa natural.
-
-### 2. `workflow/graph.py` (LangGraph Framework)
-Merupakan komposer utama (*orchestrator*) yang menghubungkan seluruh agen menjadi **StateGraph** dengan kemampuan eksekusi paralel (*concurrent branching*) untuk agen `PricingService` dan `InventoryService`.
-
-### 3. `api/main.py` & `dashboard/`
-API backend berbasis FastAPI dan antarmuka web SPA dashboard interaktif untuk memantau inventaris, transaksi penjualan, pesanan pembelian (PO), dan statistik latensi agen secara *real-time*.
+## 🌟 Highlight Keunggulan Arsitektur:
+1. **Modul Terpisah & Jelas (Separation of Concerns)**: Setiap domain memiliki direktori khusus (`core`, `memory`, `planning`, `nlu`, `services`, `business`).
+2. **Backward Compatibility**: Subpackage `__init__.py` dan root `config.py` menjamin 100% kompatibilitas impor lama maupun baru.
+3. **0ms Command Latency**: `conversation_manager.py` menangani perintah `/reset`, `/help`, `/cancel` secara langsung tanpa membuang token LLM.
+4. **Resilient FSM**: `workflow_manager.py` mengelola *Circuit Breaker*, *Rollback*, dan *Transaction Timeout*.
+5. **Parallel DAG Execution**: `graph.py` dan `planner_service.py` mendukung eksekusi parallel LangGraph untuk efisiensi latensi.

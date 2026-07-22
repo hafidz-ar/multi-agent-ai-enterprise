@@ -4,9 +4,9 @@ import time
 import uuid
 import sqlite3
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
-from parfum_agents.models import AgentState, InventoryStatus, ResultType, Severity
+from models import AgentState, InventoryStatus, ResultType, Severity
 
 def run(state: AgentState) -> dict:
     start_time = time.time()
@@ -51,7 +51,6 @@ def run(state: AgentState) -> dict:
         conn = sqlite3.connect(config.DB_PATH)
         c = conn.cursor()
 
-        # Cari perfume_id dari nama produk
         c.execute("SELECT perfume_id, name FROM perfume_catalog WHERE name LIKE ?", (f"%{product_name}%",))
         prod = c.fetchone()
 
@@ -79,9 +78,6 @@ def run(state: AgentState) -> dict:
 
         perfume_id  = prod[0]
 
-
-        
-        # Check stock
         if size_ml:
             c.execute("SELECT size_ml, quantity_available, reorder_point FROM inventory WHERE perfume_id = ? AND size_ml = ?", (perfume_id, size_ml))
         else:
@@ -111,7 +107,6 @@ def run(state: AgentState) -> dict:
                 }
             }
             
-        # Compile inventory logic
         total_available = 0
         min_reorder_point = 999999
         stock_sizes = {}
@@ -123,7 +118,6 @@ def run(state: AgentState) -> dict:
             if r_point < min_reorder_point:
                 min_reorder_point = r_point
                 
-        # Business Logic Decision
         need_production = False
         status = InventoryStatus.AVAILABLE
         decision_log = "AVAILABLE"
@@ -166,7 +160,6 @@ def run(state: AgentState) -> dict:
             "execution_id": exec_id
         }
         
-        # Jika dalam transaksi pembelian, perbarui state FSM
         wf_state = state.get("workflow_state")
         tx_context = state.get("transaction_context", {})
         

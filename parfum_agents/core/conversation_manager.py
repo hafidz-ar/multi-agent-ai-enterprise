@@ -2,8 +2,8 @@ import time
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from parfum_agents.models import AgentState
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from models import AgentState
 
 SYSTEM_COMMANDS = {
     "reset": "RESET",

@@ -8,22 +8,20 @@ from typing import TypedDict, List, Dict
 from langgraph.graph import StateGraph, END
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from parfum_agents.models import AgentState
-from parfum_agents import (
-    conversation_manager,
-    memory_service,
-    nlu_service,
-    event_mapper,
-    planner_service,
-    workflow_manager,
+from models import AgentState
+from parfum_agents.core import conversation_manager, workflow_manager, coordinator_ai
+from parfum_agents.memory import memory_service
+from parfum_agents.nlu import nlu_service
+from parfum_agents.planning import event_mapper, planner_service
+from parfum_agents.services import (
     inventory_service,
     production_service,
     procurement_service,
     pricing_service,
     reporting_service,
-    order_service,
-    coordinator_ai
+    order_service
 )
+
 from parfum_agents.tools.utils import log_evaluation
 
 def _log_metrics(state: AgentState, metrics: dict):

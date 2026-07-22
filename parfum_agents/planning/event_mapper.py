@@ -2,8 +2,8 @@ import os
 import sys
 import time
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from parfum_agents.models import AgentState, WorkflowEvent
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from models import AgentState, WorkflowEvent
 
 def run(state: AgentState) -> dict:
     start_time = time.time()

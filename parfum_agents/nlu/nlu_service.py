@@ -7,10 +7,10 @@ import re
 from datetime import datetime, timedelta
 from langchain_groq import ChatGroq
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
 from parfum_agents.tools.utils import log_evaluation
-from parfum_agents.models import AgentState
+from models import AgentState
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -113,7 +113,7 @@ def run(state: AgentState) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Layer 0 — Active workflow context lock (unchanged from original)
+# Layer 0 — Active workflow context lock
 # ---------------------------------------------------------------------------
 
 def _semantic_frame_from_active_context(input_text: str, conv_ctx: dict, tx_ctx: dict):
@@ -152,10 +152,6 @@ def _semantic_frame_from_active_context(input_text: str, conv_ctx: dict, tx_ctx:
 # ---------------------------------------------------------------------------
 
 def _fill_pending_slot(input_text: str, pending: str, resolved: dict, conv_ctx: dict, catalog: list):
-    """
-    When a specific slot is being awaited, try to extract it directly.
-    Returns a semantic frame if successful, else None.
-    """
     text     = input_text.strip().lower()
     goal     = conv_ctx.get("conversation_goal") or resolved.get("last_goal") or "PURCHASE"
     product  = resolved.get("last_product") or conv_ctx.get("current_product")
@@ -166,7 +162,6 @@ def _fill_pending_slot(input_text: str, pending: str, resolved: dict, conv_ctx: 
         if size:
             return _make_purchase_or_goal_frame(goal, product, size, None, catalog)
 
-        # "yang besar" / "yang kecil" shortcuts
         if any(w in text for w in ["besar", "large", "gede"]):
             return _make_purchase_or_goal_frame(goal, product, 100, None, catalog)
         if any(w in text for w in ["kecil", "small"]):
@@ -175,10 +170,8 @@ def _fill_pending_slot(input_text: str, pending: str, resolved: dict, conv_ctx: 
     elif pending == "quantity":
         qty = _extract_quantity(text)
         if qty is None:
-            # bare number
             m = re.search(r"\b(\d+)\b", text)
             qty = int(m.group(1)) if m else None
-        # word numbers
         word_map = {"satu": 1, "dua": 2, "tiga": 3, "empat": 4, "lima": 5,
                     "enam": 6, "tujuh": 7, "delapan": 8, "sembilan": 9, "sepuluh": 10}
         for word, num in word_map.items():
@@ -207,10 +200,8 @@ def _fill_pending_slot(input_text: str, pending: str, resolved: dict, conv_ctx: 
 
 
 def _make_purchase_or_goal_frame(goal: str, product, size_ml, quantity, catalog: list):
-    """Build frame for PURCHASE / PRICE_CHECK / STOCK_CHECK using resolved entities."""
     ambiguities = []
 
-    # Validate product
     if product:
         matched = _match_product_to_catalog(product, catalog)
         if matched:
@@ -252,7 +243,6 @@ def _make_purchase_or_goal_frame(goal: str, product, size_ml, quantity, catalog:
 # Layer 2 — Deterministic coreference resolver
 # ---------------------------------------------------------------------------
 
-# Patterns that signal a reference to a previously discussed entity
 _COREF_PRODUCT_PATTERNS = [
     r"\byang\s+itu\b", r"\byang\s+tadi\b", r"\bitu\b", r"\btadi\b",
     r"\byang\s+sama\b", r"\bproduk\s+yang\s+sama\b"
@@ -264,25 +254,17 @@ _SIZE_SHORTCUTS = {
 
 
 def _deterministic_coreref_resolver(input_text: str, resolved: dict, conv_ctx: dict, catalog: list):
-    """
-    Resolve references like 'yang itu', 'berapa harganya?', 'yang 50ml', 'stoknya'
-    using resolved_entities + conversation_context WITHOUT calling an LLM.
-    Returns a semantic frame or None.
-    """
     text    = input_text.strip().lower()
     product = resolved.get("last_product") or conv_ctx.get("current_product")
     size_ml = resolved.get("last_variant")  or conv_ctx.get("current_variant")
     goal    = conv_ctx.get("conversation_goal")
 
-    # ── 1. Bare size-only input (e.g. "yang 50ml", "100ml saja") ──────────
     size_only = _extract_size_ml(text)
     has_product_in_text = bool(_extract_product_from_catalog(text, catalog))
     if size_only and not has_product_in_text and product:
-        # inherit goal or use PRICE_CHECK / PURCHASE heuristic
         inferred_goal = goal if goal in ["PURCHASE", "PRICE_CHECK", "STOCK_CHECK", "RESTOCK"] else "PRICE_CHECK"
         return _make_purchase_or_goal_frame(inferred_goal, product, size_only, None, catalog)
 
-    # ── 2. "Yang itu / yang tadi / itu" — co-reference product ────────────
     has_coref = any(re.search(p, text) for p in _COREF_PRODUCT_PATTERNS)
     if has_coref and product:
         override_size = _extract_size_ml(text) or size_ml
@@ -293,19 +275,16 @@ def _deterministic_coreref_resolver(input_text: str, resolved: dict, conv_ctx: d
         inferred_goal = goal if goal in ["PURCHASE", "PRICE_CHECK", "STOCK_CHECK", "RESTOCK"] else "PRICE_CHECK"
         return _make_purchase_or_goal_frame(inferred_goal, product, override_size, None, catalog)
 
-    # ── 3. "Berapa harganya?" / "harganya?" — PRICE_CHECK with known product ──
     price_q_patterns = [r"\bharganya\b", r"\bberapa harga\b", r"\bharga(?:nya)?\b"]
     if product and any(re.search(p, text) for p in price_q_patterns) and not has_product_in_text:
         override_size = _extract_size_ml(text) or size_ml
         return _make_purchase_or_goal_frame("PRICE_CHECK", product, override_size, None, catalog)
 
-    # ── 4. "Stoknya?" / "ada stoknya?" — STOCK_CHECK with known product ───
     stock_q_patterns = [r"\bstoknya\b", r"\bstok(?:nya)?\s+ada\b", r"\bada\s+stok\b"]
     if product and any(re.search(p, text) for p in stock_q_patterns) and not has_product_in_text:
         override_size = _extract_size_ml(text) or size_ml
         return _make_purchase_or_goal_frame("STOCK_CHECK", product, override_size, None, catalog)
 
-    # ── 5. "Beli / saya mau beli / oke lanjut beli" with known product ────
     buy_patterns = [r"\bbeli\b", r"\border\b", r"\bpesan\b", r"\blanjut\s+beli\b", r"\boke\s+beli\b"]
     if product and any(re.search(p, text) for p in buy_patterns) and not has_product_in_text:
         override_size = _extract_size_ml(text) or size_ml
@@ -325,21 +304,18 @@ def _deterministic_coreref_resolver(input_text: str, resolved: dict, conv_ctx: d
             "ambiguities": ambigs
         }
 
-    # ── 6. "Yang besar" / "yang kecil" size shortcuts with known product ──
     for key, val in _SIZE_SHORTCUTS.items():
         if key in text and product:
             inferred_goal = goal if goal in ["PURCHASE", "PRICE_CHECK", "STOCK_CHECK"] else "PRICE_CHECK"
             return _make_purchase_or_goal_frame(inferred_goal, product, val, None, catalog)
 
-    # ── 7. Bare number where PURCHASE is the last known goal ──────────────
     if goal == "PURCHASE":
         number_match = re.fullmatch(r"\s*(\d+)\s*(pcs?|piece|botol|unit)?\s*", text)
         if number_match:
             qty = int(number_match.group(1))
-            if qty < 1000:   # sanity: avoid treating size_ml as qty
+            if qty < 1000:
                 return _make_purchase_or_goal_frame("PURCHASE", product, size_ml, qty, catalog)
 
-    # ── 8. "Kemarin?" / "bulan lalu?" where last goal = REPORT_CHECK ──────
     if goal == "REPORT_CHECK":
         period_data = _extract_period_with_range(text)
         if period_data:
@@ -353,7 +329,7 @@ def _deterministic_coreref_resolver(input_text: str, resolved: dict, conv_ctx: d
 
 
 # ---------------------------------------------------------------------------
-# Layer 3 — Rule-based extraction (unchanged logic, enhanced)
+# Layer 3 — Rule-based extraction
 # ---------------------------------------------------------------------------
 
 def _semantic_frame_from_rules(input_text: str, catalog: list):
@@ -514,7 +490,7 @@ Format output JSON:
 
         semantic_frame = json.loads(response.content)
 
-        # ── Post-processing validation ──────────────────────────────────
+        # Post-processing validation
         ambiguities = semantic_frame.setdefault("ambiguities", [])
         entities    = semantic_frame.setdefault("entities", {})
         goal        = semantic_frame.get("goal", "UNKNOWN")
@@ -575,11 +551,9 @@ Format output JSON:
 
 def _extract_product_from_catalog(text: str, catalog: list):
     compact = re.sub(r"[^a-z0-9]+", " ", text).strip()
-    # Exact substring match first
     for product in catalog:
         if product.lower() in compact:
             return product
-    # Token overlap (≥ 2 tokens)
     text_tokens = set(compact.split())
     best_match, best_score = None, 0
     for product in catalog:
@@ -615,15 +589,8 @@ def _extract_payment(text: str):
 
 
 def _extract_period_with_range(text: str) -> dict | None:
-    """
-    Maps natural language time expressions to a label + ISO date range.
-    Returns dict with keys: label, start_date, end_date (YYYY-MM-DD strings)
-    or None if not matched.
-    Auto-adjusts to data year if current year has no data.
-    """
     today = datetime.now().date()
     
-    # Auto-detect data year from DB
     try:
         import sqlite3
         conn = sqlite3.connect(config.DB_PATH)
@@ -634,7 +601,7 @@ def _extract_period_with_range(text: str) -> dict | None:
         if row and row[0]:
             max_date = datetime.strptime(row[0][:10], "%Y-%m-%d").date()
             if max_date.year != today.year:
-                today = max_date  # Use data's latest date as reference
+                today = max_date
     except Exception:
         pass
 
@@ -642,53 +609,19 @@ def _extract_period_with_range(text: str) -> dict | None:
         return d.strftime("%Y-%m-%d")
 
     mappings = [
-        # Daily
-        (["hari ini", "today"],
-         "hari ini", today, today),
-        (["kemarin", "yesterday"],
-         "kemarin", today - timedelta(days=1), today - timedelta(days=1)),
-        (["lusa"],
-         "lusa", today - timedelta(days=2), today - timedelta(days=2)),
-        # Weekly
-        (["minggu ini", "this week"],
-         "minggu ini",
-         today - timedelta(days=today.weekday()),
-         today - timedelta(days=today.weekday()) + timedelta(days=6)),
-        (["minggu lalu", "pekan lalu", "last week"],
-         "minggu lalu",
-         today - timedelta(days=today.weekday() + 7),
-         today - timedelta(days=today.weekday() + 1)),
-        # Monthly
-        (["bulan ini", "this month"],
-         "bulan ini",
-         today.replace(day=1),
-         today),
-        (["bulan lalu", "last month"],
-         "bulan lalu",
-         (today.replace(day=1) - timedelta(days=1)).replace(day=1),
-         today.replace(day=1) - timedelta(days=1)),
-        (["awal bulan"],
-         "awal bulan",
-         today.replace(day=1),
-         today.replace(day=10)),
-        (["akhir bulan"],
-         "akhir bulan",
-         today.replace(day=21),
-         today),
-        # Quarterly / yearly labels (no precise range; just label)
-        (["triwulan lalu", "q1", "q2", "q3", "q4", "kuartal lalu"],
-         "triwulan lalu", None, None),
-        (["semester lalu", "semester ini"],
-         "semester lalu", None, None),
-        # Yearly
-        (["tahun ini", "this year"],
-         "tahun ini",
-         today.replace(month=1, day=1),
-         today),
-        (["tahun lalu", "last year"],
-         "tahun lalu",
-         today.replace(year=today.year - 1, month=1, day=1),
-         today.replace(year=today.year - 1, month=12, day=31)),
+        (["hari ini", "today"], "hari ini", today, today),
+        (["kemarin", "yesterday"], "kemarin", today - timedelta(days=1), today - timedelta(days=1)),
+        (["lusa"], "lusa", today - timedelta(days=2), today - timedelta(days=2)),
+        (["minggu ini", "this week"], "minggu ini", today - timedelta(days=today.weekday()), today - timedelta(days=today.weekday()) + timedelta(days=6)),
+        (["minggu lalu", "pekan lalu", "last week"], "minggu lalu", today - timedelta(days=today.weekday() + 7), today - timedelta(days=today.weekday() + 1)),
+        (["bulan ini", "this month"], "bulan ini", today.replace(day=1), today),
+        (["bulan lalu", "last month"], "bulan lalu", (today.replace(day=1) - timedelta(days=1)).replace(day=1), today.replace(day=1) - timedelta(days=1)),
+        (["awal bulan"], "awal bulan", today.replace(day=1), today.replace(day=10)),
+        (["akhir bulan"], "akhir bulan", today.replace(day=21), today),
+        (["triwulan lalu", "q1", "q2", "q3", "q4", "kuartal lalu"], "triwulan lalu", None, None),
+        (["semester lalu", "semester ini"], "semester lalu", None, None),
+        (["tahun ini", "this year"], "tahun ini", today.replace(month=1, day=1), today),
+        (["tahun lalu", "last year"], "tahun lalu", today.replace(year=today.year - 1, month=1, day=1), today.replace(year=today.year - 1, month=12, day=31)),
     ]
 
     for keywords, label, start, end in mappings:
@@ -701,15 +634,7 @@ def _extract_period_with_range(text: str) -> dict | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Helpers — conversation history
-# ---------------------------------------------------------------------------
-
 def _build_history_prompt(history: list, limit: int = CONTEXT_WINDOW) -> str:
-    """
-    Convert the last `limit` messages from conversation_history into a
-    clean USER/ASSISTANT format for inclusion in the LLM prompt.
-    """
     if not history:
         return ""
 
@@ -723,12 +648,7 @@ def _build_history_prompt(history: list, limit: int = CONTEXT_WINDOW) -> str:
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------------------------
-# Helpers — context / entity update
-# ---------------------------------------------------------------------------
-
 def _update_resolved_entities(frame: dict, resolved: dict):
-    """Persist extracted entities into the cross-turn resolved_entities store."""
     entities = frame.get("entities", {})
     if entities.get("product") and entities["product"] != "UNKNOWN_PRODUCT":
         resolved["last_product"] = entities["product"]
@@ -763,10 +683,6 @@ def _apply_context_lock(input_text: str, semantic_frame: dict, conv_ctx: dict, t
         semantic_frame["intent"]              = "REORDER_PRODUCT"
         semantic_frame["requested_operations"]= ["CHECK_STOCK", "PRODUCE_ITEM"]
 
-
-# ---------------------------------------------------------------------------
-# Helpers — misc
-# ---------------------------------------------------------------------------
 
 def _make_frame(goal: str, intent: str = "", ops: list = None, confidence: float = 0.99):
     return {

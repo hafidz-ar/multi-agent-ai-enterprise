@@ -3,8 +3,8 @@ import sys
 import time
 import uuid
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from parfum_agents.models import AgentState, ResultType, Severity
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from models import AgentState, ResultType, Severity
 
 def run(state: AgentState) -> dict:
     start_time = time.time()
@@ -12,7 +12,6 @@ def run(state: AgentState) -> dict:
     
     tx_context = state.get("transaction_context", {})
     
-    # Validation
     payment_method = tx_context.get("payment_method")
     if not payment_method:
         return _error_response(exec_id, start_time, tx_context, "Metode pembayaran belum dipilih.")
@@ -20,7 +19,6 @@ def run(state: AgentState) -> dict:
     if tx_context.get("status") != "PROCESSING_ORDER":
         return _error_response(exec_id, start_time, tx_context, "Status transaksi tidak valid untuk memproses pesanan.")
     
-    # Database Operations
     import sqlite3
     import datetime
     import config
@@ -29,7 +27,6 @@ def run(state: AgentState) -> dict:
         conn = sqlite3.connect(config.DB_PATH)
         c = conn.cursor()
         
-        # 1. Get perfume details for price and category
         product_name = tx_context.get("product")
         size_ml = tx_context.get("size_ml", 50)
         qty = tx_context.get("qty", 1)
@@ -40,7 +37,6 @@ def run(state: AgentState) -> dict:
         if prod:
             perfume_id, p_name, category, price = prod
             
-            # Sesuaikan harga berdasarkan ukuran (size_ml)
             if size_ml == 100:
                 unit_price = price
             elif size_ml == 50:
@@ -52,7 +48,6 @@ def run(state: AgentState) -> dict:
                 
             total_price = unit_price * qty
             
-            # 2. Insert into sales_history
             tx_id = tx_context.get("transaction_id", f"TX-M-{uuid.uuid4().hex[:8]}")
             today = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             c.execute("""
@@ -67,7 +62,6 @@ def run(state: AgentState) -> dict:
                 "Chatbot", "Online", "Retail", "None", 0
             ))
             
-            # 3. Update inventory (with negative stock protection)
             c.execute("""
                 SELECT quantity_available FROM inventory 
                 WHERE perfume_id = ? AND size_ml = ?
