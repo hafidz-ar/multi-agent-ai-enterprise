@@ -50,8 +50,8 @@ def generate_ingredients():
         
     for i in range(NUM_INGREDIENTS):
         ing_id = f"ING-{i+1:03d}"
-        stock = round(random.uniform(500, 5000), 2)
-        reorder = round(random.uniform(100, 500), 2)
+        stock = random.randint(500, 5000)
+        reorder = random.randint(100, 500)
         
         ingredients.append({
             'ingredient_id': ing_id,
@@ -180,6 +180,8 @@ def generate_formula(perfumes_df, ingredients_df):
         sampled_ings = ingredients_df.sample(num_ingredients)
         
         percentages = np.random.dirichlet(np.ones(num_ingredients), size=1)[0] * 100
+        percentages = np.round(percentages).astype(int)
+        percentages[-1] = 100 - np.sum(percentages[:-1])
         
         for j, (i_idx, irow) in enumerate(sampled_ings.iterrows()):
             formulas.append({
@@ -188,8 +190,8 @@ def generate_formula(perfumes_df, ingredients_df):
                 'perfume_name': prow['name'],
                 'ingredient_id': irow['ingredient_id'],
                 'ingredient_name': irow['ingredient_name'],
-                'percentage': round(percentages[j], 2),
-                'quantity_per_100ml': round(percentages[j], 2), # Assuming 100ml total for simplicity
+                'percentage': int(percentages[j]),
+                'quantity_per_100ml': int(percentages[j]), # Assuming 100ml total for simplicity
                 'note_type': random.choice(['Top', 'Heart', 'Base', 'Fixative']),
                 'is_critical': random.choice([True, False])
             })
