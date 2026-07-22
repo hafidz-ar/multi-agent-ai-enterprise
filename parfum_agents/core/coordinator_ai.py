@@ -88,7 +88,7 @@ def run(state: AgentState) -> dict:
             
     if wf_state == "COMPLETED":
         order_data = results_by_action.get(Action.CREATE_ORDER) or results_by_action.get("OrderService") or {}
-        if order_data.get("success", True):
+        if order_data.get("success", True) and order_data.get("invoice"):
             inv_no = order_data.get("invoice") or order_data.get("transaction_id", tx_context.get("invoice_no", "INV-20260722-0001"))
             p_name = order_data.get("product", tx_context.get("product", "Parfum"))
             s_ml = order_data.get("size_ml", tx_context.get("size_ml", 50))
@@ -114,9 +114,17 @@ def run(state: AgentState) -> dict:
                 f"• Sisa stok: {rem_stock} botol\n\n"
                 f"Terima kasih telah berbelanja di Parfum Enterprise."
             )
-            return _respond_directly(start_time, receipt_msg)
+            # Reset workflow_state after showing receipt so next query is fresh
+            return {
+                **_respond_directly(start_time, receipt_msg),
+                "workflow_state": "START",
+                "transaction_context": {}
+            }
                     
-        return _respond_directly(start_time, "Pesanan Anda berhasil dibuat dan status transaksi selesai.")
+        # COMPLETED but no order data (stale state) — fall through to normal processing
+        wf_state = "START"
+        state["workflow_state"] = "START"
+        state["transaction_context"] = {}
         
     # 1. Khusus CLARIFICATION_REQUIRED
     if planner_status == "CLARIFICATION_REQUIRED":
@@ -142,6 +150,29 @@ def run(state: AgentState) -> dict:
 
     if goal == "GREETING":
         return _respond_directly(start_time, "Halo! Selamat datang di Parfum Enterprise AI Assistant. Ada yang bisa saya bantu terkait katalog, stok, harga, atau pembelian hari ini?")
+
+    if goal == "RECOMMENDATION":
+        return _handle_fallback(state, user_input, goal, entities, start_time)
+
+    if goal == "CATALOG_CHECK":
+        return _handle_fallback(state, user_input, goal, entities, start_time)
+
+    if goal == "UNKNOWN":
+        return _respond_directly(start_time,
+            "Mohon maaf, saya tidak mengerti maksud Anda. 😊\n\n"
+            "Saya adalah AI Assistant toko parfum. Saya bisa membantu:\n"
+            "• Pembelian parfum\n"
+            "• Cek harga & stok\n"
+            "• Laporan penjualan\n"
+            "• Restock & reorder\n\n"
+            "Ketik **help** untuk panduan lengkap, atau langsung sampaikan kebutuhan Anda!"
+        )
+
+    # Handle REPORT_CHECK: build rich formatted report directly from service data
+    if goal == "REPORT_CHECK" and services_results:
+        report_result = next((r for r in services_results if r.get("service_name") == "ReportingService"), None)
+        if report_result and report_result.get("payload"):
+            return _format_report_response(report_result["payload"], start_time)
 
     if not services_results:
         return _handle_fallback(state, user_input, goal, entities, start_time)
@@ -220,6 +251,36 @@ Tanyakan informasi ini kepada pelanggan secara sopan.""")
             }
         }
 
+def _build_restock_clarification(entities: dict, context: dict, tx_context: dict, ambiguities: list) -> str:
+    """Build a contextual clarification message for RESTOCK/REORDER goal."""
+    product  = entities.get("product") or tx_context.get("product") or context.get("current_product")
+    size_ml  = entities.get("size_ml") or tx_context.get("size_ml") or context.get("current_variant")
+    quantity = entities.get("quantity") or tx_context.get("qty")
+
+    if product and size_ml and not quantity:
+        return (
+            f"Baik, Anda ingin melakukan reorder **{product} {size_ml}ml**.\n\n"
+            f"Berapa botol yang ingin diproduksi/direstock?"
+        )
+    if product and not size_ml:
+        return (
+            f"Baik, Anda ingin melakukan reorder **{product}**.\n\n"
+            f"Silakan tentukan:\n"
+            f"• Ukuran botol: 50ml atau 100ml\n"
+            f"• Jumlah botol yang ingin diproduksi"
+        )
+    missing_parts = []
+    if "product" in ambiguities or not product:
+        missing_parts.append("nama produk parfum")
+    if "size_ml" in ambiguities or not size_ml:
+        missing_parts.append("ukuran botol (50ml atau 100ml)")
+    if "quantity" in ambiguities or not quantity:
+        missing_parts.append("jumlah botol yang ingin diproduksi")
+
+    if missing_parts:
+        return f"Untuk proses reorder, mohon konfirmasi {', '.join(missing_parts)}."
+    return "Mohon berikan detail produk yang ingin di-reorder."
+
 def _synthesize_with_llm(state, user_input, goal, entities, services_results, start_time):
     try:
         llm = ChatGroq(
@@ -291,6 +352,50 @@ def _respond_directly(start_time, message: str) -> dict:
             "status":   "OK"
         }
     }
+
+
+def _format_report_response(payload: dict, start_time: float) -> dict:
+    """Build a rich, human-readable report message from ReportingService payload."""
+    period     = payload.get("period", "Periode Tidak Diketahui")
+    sales      = payload.get("sales", {})
+    inventory  = payload.get("inventory_snapshot", {})
+
+    total_tx       = sales.get("total_transactions", 0)
+    total_qty      = sales.get("total_qty_sold", 0)
+    total_rev      = sales.get("total_revenue_idr", 0)
+    top_products   = sales.get("top_products", [])
+    inv_value      = inventory.get("total_inventory_value", 0)
+    total_stock    = inventory.get("total_stock_items", 0)
+    low_stock_warn = inventory.get("low_stock_warnings", 0)
+
+    rev_fmt = f"Rp {total_rev:,.0f}".replace(",", ".")
+    inv_fmt = f"Rp {inv_value:,.0f}".replace(",", ".")
+
+    # Top products section
+    top_lines = ""
+    for i, p in enumerate(top_products, 1):
+        top_lines += f"  {i}. {p.get('name', '-')} — {p.get('qty_sold', 0):,} botol\n"
+    if not top_lines:
+        top_lines = "  (Tidak ada data penjualan)\n"
+
+    low_stock_indicator = f"\u26a0\ufe0f {low_stock_warn} produk hampir habis" if low_stock_warn > 0 else "\u2705 Stok semua produk aman"
+
+    separator = "\u2500" * 35
+    msg = (
+        f"\U0001f4ca **Laporan Penjualan \u2014 {period}**\n"
+        f"{separator}\n\n"
+        f"**Ringkasan Penjualan**\n"
+        f"\u2022 Total transaksi  : {total_tx:,} transaksi\n"
+        f"\u2022 Total terjual    : {total_qty:,} botol\n"
+        f"\u2022 Total pendapatan : {rev_fmt}\n\n"
+        f"**Top 3 Produk Terlaris**\n"
+        f"{top_lines}\n"
+        f"**Snapshot Inventori**\n"
+        f"\u2022 Total stok       : {total_stock:,} botol\n"
+        f"\u2022 Nilai inventori  : {inv_fmt}\n"
+        f"\u2022 Status stok      : {low_stock_indicator}\n"
+    )
+    return _respond_directly(start_time, msg)
 
 def _handle_restock_direct(state: AgentState, services_results: list, start_time: float) -> dict | None:
     tx_context = state.get("transaction_context", {})

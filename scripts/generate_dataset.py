@@ -203,40 +203,60 @@ def generate_formula(perfumes_df, ingredients_df):
 # 6. Generate Sales History
 def generate_sales(perfumes_df):
     sales = []
-    start_date = datetime(2024, 1, 1)
-    end_date = datetime(2024, 12, 31)
-    date_range = (end_date - start_date).days
-    
-    for i in range(NUM_SALES):
-        prow = perfumes_df.sample(1).iloc[0]
-        size = random.choice([50, 100])
-        qty = random.randint(1, 5)
-        price_multiplier = 1.0 if size == 50 else 1.8
-        unit_price = int(prow['price_idr'] * price_multiplier)
-        
-        sale_date = start_date + timedelta(days=random.randint(0, date_range))
-        
-        sales.append({
-            'transaction_id': f"TRX-{i+1:06d}",
-            'date': sale_date.strftime('%Y-%m-%d'),
-            'perfume_id': prow['perfume_id'],
-            'perfume_name': prow['name'],
-            'category': prow['category'],
-            'size_ml': size,
-            'quantity_sold': qty,
-            'unit_price_idr': unit_price,
-            'total_revenue_idr': qty * unit_price,
-            'channel': random.choice(['Online', 'Offline', 'Wholesale']),
-            'region': random.choice(['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Bali']),
-            'customer_segment': random.choice(['Regular', 'VIP', 'Corporate']),
-            'campaign_id': random.choice([f"CMP-{random.randint(1, 10):03d}", None, None]),
-            'return_flag': random.random() < 0.02 # 2% return rate
-        })
-        
+    trx_count = 0
+
+    def _add_transactions(start_d, end_d, count):
+        nonlocal trx_count
+        days_span = max(1, (end_d - start_d).days)
+        for _ in range(count):
+            trx_count += 1
+            prow = perfumes_df.sample(1).iloc[0]
+            size = random.choice([50, 100])
+            qty = random.randint(1, 10)
+            price_multiplier = 1.0 if size == 50 else 1.8
+            unit_price = int(prow['price_idr'] * price_multiplier)
+
+            random_days = random.randint(0, days_span)
+            random_seconds = random.randint(0, 86399)
+            sale_dt = start_d + timedelta(days=random_days, seconds=random_seconds)
+
+            sales.append({
+                'transaction_id': f"TRX-{trx_count:06d}",
+                'date': sale_dt.strftime('%Y-%m-%d %H:%M:%S'),
+                'perfume_id': prow['perfume_id'],
+                'perfume_name': prow['name'],
+                'category': prow['category'],
+                'size_ml': size,
+                'quantity_sold': qty,
+                'unit_price_idr': unit_price,
+                'total_revenue_idr': qty * unit_price,
+                'channel': random.choice(['Online', 'Offline', 'Wholesale']),
+                'region': random.choice(['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Bali']),
+                'customer_segment': random.choice(['Regular', 'VIP', 'Corporate']),
+                'campaign_id': random.choice([f"CMP-{random.randint(1, 10):03d}", None, None]),
+                'return_flag': random.random() < 0.02
+            })
+
+    # 1. Year 2024 (Past historical data)
+    _add_transactions(datetime(2024, 1, 1), datetime(2024, 12, 31), 300)
+
+    # 2. Year 2025 (Full year historical data)
+    _add_transactions(datetime(2025, 1, 1), datetime(2025, 12, 31), 400)
+
+    # 3. Year 2026 - Q1 & Q2 (Jan 1, 2026 - June 30, 2026)
+    _add_transactions(datetime(2026, 1, 1), datetime(2026, 6, 30), 250)
+
+    # 4. Year 2026 - Early July (July 1, 2026 - July 19, 2026)
+    _add_transactions(datetime(2026, 7, 1), datetime(2026, 7, 19), 60)
+
+    # 5. Year 2026 - This Week (July 20, 2026 - July 22, 2026)
+    _add_transactions(datetime(2026, 7, 20, 0, 0, 0), datetime(2026, 7, 22, 22, 0, 0), 25)
+
     df = pd.DataFrame(sales)
-    # Sort by date
+    # Sort by date ascending
     df = df.sort_values(by='date')
     df.to_csv(os.path.join(DATA_DIR, 'sales_history.csv'), index=False)
+    print(f"Generated {len(df)} sales transactions in sales_history.csv")
     return df
 
 # 7. Generate FAQ and SOP

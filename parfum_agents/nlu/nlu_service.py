@@ -134,7 +134,22 @@ def run(state: AgentState) -> dict:
         return {**_wrap(locked), "resolved_entities": resolved}
 
     # ------------------------------------------------------------------ #
+    # Layer 2.5 — Early non-purchase intent detection (BEFORE pending slot)#
+    # If user sends a clearly non-PURCHASE/RESTOCK intent while a pending  #
+    # slot is active, clear the slot and handle the new intent properly.   #
+    # ------------------------------------------------------------------ #
+    early_intent = _detect_non_purchase_intent(input_text)
+    if early_intent and pending:
+        # User switched topic — clear pending slot and handle new intent
+        rule_frame = _semantic_frame_from_rules(input_text, catalog)
+        if rule_frame and rule_frame.get("goal") not in ["PURCHASE", "RESTOCK", None]:
+            _update_resolved_entities(rule_frame, resolved)
+            return {**_wrap(rule_frame), "resolved_entities": resolved, "pending_slot": ""}
+
+    # ------------------------------------------------------------------ #
     # Layer 1 — Pending slot filling (with Generic Entity Extraction)     #
+    # Only trigger when pending slot exists AND current goal is still the #
+    # same PURCHASE/RESTOCK context.                                      #
     # ------------------------------------------------------------------ #
     if pending:
         slot_frame = _fill_pending_slot(input_text, pending, resolved, conv_ctx, catalog)
@@ -358,36 +373,108 @@ def _deterministic_coreref_resolver(input_text: str, resolved: dict, conv_ctx: d
 # Layer 3 — Rule-based extraction (Generic Entity Extractor)
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Pre-detection helper: identify clearly non-PURCHASE/RESTOCK goals
+# ---------------------------------------------------------------------------
+_NON_PURCHASE_TRIGGERS = [
+    "laporan", "report", "rekap", "penjualan", "sales", "omset", "statistik",
+    "ringkasan", "berapa terjual", "rekomendasi", "recommend", "suggest", "saran",
+    "cocok untuk", "parfum untuk", "parfum pria", "parfum wanita", "parfum unisex",
+    "bantuan", "help", "bisa apa", "fitur", "apa saja", "apa aja", "cara pakai",
+    "panduan", "tutorial", "katalog", "daftar parfum", "list parfum", "semua parfum",
+    "produk apa saja", "koleksi", "terima kasih", "makasih", "thanks", "thank you",
+    "reorder", "restock", "restok", "produksi", "tambah stok", "cek stok", "cek harga",
+    "halo", "hai", "selamat", "hi", "hei", "assalamualaikum"
+]
+
+def _detect_non_purchase_intent(input_text: str) -> bool:
+    """Return True if input clearly signals a non-PURCHASE/RESTOCK domain intent."""
+    text = input_text.lower()
+    return any(t in text for t in _NON_PURCHASE_TRIGGERS)
+
+
 def _semantic_frame_from_rules(input_text: str, catalog: list):
     text = input_text.lower()
     goal = None
 
-    if any(w in text for w in ["reorder", "restock", "restok", "produksi", "tambah stok", "buat stok", "order stok", "pesan stok", "stock masuk", "stok baru", "supply", "pengiriman", "stock in", "masuk barang"]):
+    # ── High-specificity patterns checked FIRST ──────────────────────────
+    if any(w in text for w in ["reorder", "restock", "restok", "produksi", "tambah stok",
+                                "buat stok", "order stok", "pesan stok", "stock masuk",
+                                "stok baru", "supply", "pengiriman", "stock in", "masuk barang"]):
         goal = "RESTOCK"
-    elif any(w in text for w in ["cek harga", "harga", "harganya", "berapa harga", "harga berapa", "seberapa mahal", "harga barang", "bandingkan harga"]):
+    elif any(w in text for w in ["cek harga", "berapa harga", "harga berapa",
+                                  "seberapa mahal", "harga barang", "bandingkan harga",
+                                  "harganya"]):
+        # Only if the word "harga" is present alone with no product intent
+        # — already specific enough
         goal = "PRICE_CHECK"
-    elif any(w in text for w in ["cek stok", "stok", "stock", "ada stok", "stok berapa", "berapa stok", "ketersediaan", "ada gak", "masih ada", "ready", "tersedia"]):
+    elif any(w in text for w in ["cek stok", "stok ada", "ada stok", "stok berapa",
+                                  "berapa stok", "ketersediaan", "ready", "tersedia",
+                                  "masih ada", "ada gak"]):
         goal = "STOCK_CHECK"
-    elif any(w in text for w in ["laporan", "report", "rekap", "penjualan", "sales", "omset", "statistik", "ringkasan", "berapa terjual"]):
+    elif any(w in text for w in ["laporan", "report", "rekap", "penjualan", "sales",
+                                  "omset", "statistik", "ringkasan", "berapa terjual"]):
         goal = "REPORT_CHECK"
-    elif any(w in text for w in ["beli", "pesan", "order", "saya mau", "mau beli", "beli dong", "saya ingin", "ambil", "checkout", "transaksi"]):
-        goal = "PURCHASE"
-    elif any(w in text for w in ["halo", "hai", "selamat", "hi", "hei", "assalamualaikum", "pagi", "siang", "sore", "malam"]):
-        goal = "GREETING"
-    elif any(w in text for w in ["iya", "ya", "ok", "oke", "lanjut", "gas", "sip", "betul", "benar", "setuju", "baik", "yes", "ayo"]):
-        goal = "CONFIRM"
-    elif any(w in text for w in ["tidak", "batal", "ga jadi", "cancel", "nggak", "gak mau", "jangan", "enggak", "tidak jadi", "skip", "lewat"]):
-        goal = "REJECT"
-    elif any(w in text for w in ["tunai", "cash", "transfer", "bca", "qris", "gopay", "ovo", "mandiri", "shopeepay", "linkaja", "bri", "rekening", "cicilan"]):
-        goal = "PAYMENT_METHOD"
+    elif any(w in text for w in ["rekomendasi", "recommend", "suggest", "saran",
+                                  "cocok untuk", "parfum untuk", "parfum pria",
+                                  "parfum wanita", "parfum unisex"]):
+        goal = "RECOMMENDATION"
+    elif any(w in text for w in ["bantuan", "help", "bisa apa", "fitur", "apa saja",
+                                  "apa aja", "cara pakai", "panduan", "tutorial"]):
+        goal = "HELP"
     elif any(w in text for w in ["terima kasih", "makasih", "thanks", "thank you", "tq", "thx", "trims"]):
         goal = "GRATITUDE"
-    elif any(w in text for w in ["bantuan", "help", "bisa apa", "fitur", "apa saja", "apa aja", "cara pakai", "panduan", "tutorial"]):
-        goal = "HELP"
-    elif any(w in text for w in ["rekomendasi", "recommend", "suggest", "saran", "cocok untuk", "parfum untuk", "parfum pria", "parfum wanita", "parfum unisex"]):
-        goal = "RECOMMENDATION"
-    elif any(w in text for w in ["katalog", "daftar parfum", "list parfum", "semua parfum", "produk apa saja", "koleksi"]):
+    elif any(w in text for w in ["katalog", "daftar parfum", "list parfum", "semua parfum",
+                                  "produk apa saja", "koleksi"]):
         goal = "CATALOG_CHECK"
+    elif any(w in text for w in ["halo", "hai", "selamat", "hi", "hei",
+                                  "assalamualaikum", "pagi", "siang", "sore", "malam"]):
+        goal = "GREETING"
+    elif any(w in text for w in ["tunai", "cash", "transfer", "bca", "qris", "gopay",
+                                  "ovo", "mandiri", "shopeepay", "linkaja", "bri",
+                                  "rekening", "cicilan"]):
+        goal = "PAYMENT_METHOD"
+    elif any(w in text for w in ["tidak", "batal", "ga jadi", "cancel", "nggak",
+                                  "gak mau", "jangan", "enggak", "tidak jadi", "skip", "lewat"]):
+        goal = "REJECT"
+    # CONFIRM only matches short standalone affirmative responses (<=4 words)
+    # Use regex word boundaries to avoid "ya" matching "saya", "ayo" matching "kayo", etc.
+    elif len(text.split()) <= 4 and re.search(
+        r'\b(iya|ya|ok|oke|lanjut|gas|sip|betul|benar|setuju|yes|ayo)\b', text
+    ):
+        goal = "CONFIRM"
+    # ── PURCHASE checked LAST and only with explicit purchase-action keywords ──
+    elif any(w in text for w in ["mau beli", "ingin beli", "beli dong", "beli aja",
+                                  "checkout", "transaksi", "beli sekarang"]):
+        goal = "PURCHASE"
+    elif any(w in text for w in ["saya mau", "saya ingin", "aku mau", "aku ingin"]) and \
+         any(w in text for w in ["beli", "pesan", "order", "ambil"]):
+        # "saya ingin beli", "saya mau pesan" → PURCHASE even without catalog product
+        goal = "PURCHASE"
+    elif any(w in text for w in ["beli", "pesan", "order", "ambil"]) and \
+         _extract_product_from_catalog(input_text, catalog):
+        # Only PURCHASE if there's actually a product in the catalog mentioned
+        goal = "PURCHASE"
+    elif any(w in text for w in ["saya mau", "saya ingin", "aku mau", "aku ingin"]) and \
+         _extract_product_from_catalog(input_text, catalog):
+        # "saya mau/ingin [product name]" → PURCHASE only when catalog product present
+        goal = "PURCHASE"
+
+    # Out-of-domain / tidak relevan dengan toko parfum
+    # Jika kalimat mengandung "saya mau/ingin" tapi tidak ada produk & tidak ada purchase keyword
+    _purchase_action_words = ["beli", "pesan", "order", "ambil", "checkout", "transaksi"]
+    if not goal and any(w in text for w in ["saya mau", "saya ingin", "aku mau", "aku ingin"]) and \
+       not any(w in text for w in _purchase_action_words) and \
+       not _extract_product_from_catalog(input_text, catalog):
+        # Out-of-domain: "saya mau tidur", "saya mau makan", dll
+        return {
+            "goal": "UNKNOWN",
+            "intent": "OUT_OF_DOMAIN",
+            "entities": {"product": None, "size_ml": None, "quantity": None, "period": None, "payment_method": None},
+            "requested_operations": [],
+            "confidence": 0.9,
+            "ambiguities": []
+        }
 
     if not goal:
         return None
@@ -474,7 +561,16 @@ ATURAN PEMETAAN GOAL:
 | CONFIRM        | []                                                      |
 | REJECT         | []                                                      |
 | PAYMENT_METHOD | []                                                      |
+| RECOMMENDATION | []                                                      |
+| HELP           | []                                                      |
 | UNKNOWN        | []                                                      |
+
+ATURAN PENTING:
+- CONFIRM HANYA untuk kalimat pendek (<=4 kata) yang benar-benar bermakna setuju/konfirmasi: "ok", "iya", "lanjut", "setuju", "yes".
+- Kalimat seperti "saya mau tidur", "saya mau makan", "saya capek" adalah UNKNOWN (bukan domain parfum).
+- Kalimat "saya ingin beli" tanpa produk = PURCHASE dengan ambiguities=["product", "size_ml", "quantity"].
+- Kalimat "tolong", "bantu" tanpa konteks = HELP atau UNKNOWN, BUKAN PURCHASE.
+- Jangan paksa setiap kalimat menjadi PURCHASE atau CONFIRM.
 
 EKSTRAKSI ENTITAS SIMULTAN:
 Ekstrak SELURUH entitas yang ada di teks user tanpa terbatas pada slot yang sedang ditunggu.

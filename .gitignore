@@ -21,3 +21,5 @@ logs/
 .vscode/
 .idea/
 *.swp
+
+AGENT_RULES.md

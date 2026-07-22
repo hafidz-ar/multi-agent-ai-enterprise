@@ -162,7 +162,14 @@ def coordinator_node(state: AgentState):
     res = coordinator_ai.run(state)
     if "_metrics" in res:
         _log_metrics(state, res.pop("_metrics"))
-    return _advance_plan(state, "CoordinatorAI", {"final_response": res.get("final_response", "")})
+    # Build final node result — carry through any state resets from coordinator
+    node_res = _advance_plan(state, "CoordinatorAI", {"final_response": res.get("final_response", "")})
+    # Propagate workflow_state / transaction_context resets if coordinator returned them
+    if "workflow_state" in res:
+        node_res["workflow_state"] = res["workflow_state"]
+    if "transaction_context" in res:
+        node_res["transaction_context"] = res["transaction_context"]
+    return node_res
 
 # --- Service Registry ---
 SERVICE_REGISTRY = {
