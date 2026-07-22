@@ -6,33 +6,39 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from parfum_agents.models import AgentState, WorkflowStatus, WorkflowEvent
 from parfum_agents.tools.utils import generate_transaction_id
+from parfum_agents.event_bus import EventBus
 
 TRANSITIONS = {
     # (Current Tx Status, Event) -> (Next Tx Status, Next Wf State, Exec Plan, Decision)
-    ("DRAFT", WorkflowEvent.PURCHASE_INTENT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, ["CHECK_STOCK", "CoordinatorAI"], "START_PURCHASE"),
-    (None, WorkflowEvent.PURCHASE_INTENT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, ["CHECK_STOCK", "CoordinatorAI"], "START_PURCHASE"),
+    ("DRAFT", WorkflowEvent.PURCHASE_INTENT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "START_PURCHASE"),
+    (None, WorkflowEvent.PURCHASE_INTENT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "START_PURCHASE"),
     
     ("WAITING_CONFIRMATION", WorkflowEvent.CONFIRM): ("WAITING_PAYMENT", WorkflowStatus.WAITING_USER_INPUT, ["CoordinatorAI"], "PROCEED_TO_PAYMENT"),
     ("WAITING_CONFIRMATION", WorkflowEvent.REJECT): ("CANCELLED", WorkflowStatus.CANCELLED, ["CoordinatorAI"], "CANCEL_ORDER"),
-    ("WAITING_CONFIRMATION", WorkflowEvent.CHANGE_QTY): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, ["CHECK_STOCK", "CoordinatorAI"], "REVALIDATE_STOCK_QTY"),
-    ("WAITING_CONFIRMATION", WorkflowEvent.CHANGE_VARIANT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, ["CHECK_STOCK", "CoordinatorAI"], "REVALIDATE_STOCK_VARIANT"),
+    ("WAITING_CONFIRMATION", WorkflowEvent.CHANGE_QTY): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "REVALIDATE_STOCK_QTY"),
+    ("WAITING_CONFIRMATION", WorkflowEvent.CHANGE_VARIANT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "REVALIDATE_STOCK_VARIANT"),
     
     ("WAITING_PAYMENT", WorkflowEvent.PAYMENT_SELECTED): ("PROCESSING_ORDER", WorkflowStatus.EXECUTING_SERVICE, ["CREATE_ORDER", "CoordinatorAI"], "PROCESS_ORDER"),
     ("WAITING_PAYMENT", WorkflowEvent.REJECT): ("CANCELLED", WorkflowStatus.CANCELLED, ["CoordinatorAI"], "CANCEL_ORDER"),
-    ("WAITING_PAYMENT", WorkflowEvent.CHANGE_QTY): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, ["CHECK_STOCK", "CoordinatorAI"], "REVALIDATE_STOCK_QTY"),
-    ("WAITING_PAYMENT", WorkflowEvent.CHANGE_VARIANT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, ["CHECK_STOCK", "CoordinatorAI"], "REVALIDATE_STOCK_VARIANT"),
+    ("WAITING_PAYMENT", WorkflowEvent.CHANGE_QTY): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "REVALIDATE_STOCK_QTY"),
+    ("WAITING_PAYMENT", WorkflowEvent.CHANGE_VARIANT): ("DRAFT", WorkflowStatus.EXECUTING_SERVICE, [["CHECK_PRICE", "CHECK_STOCK"], "CoordinatorAI"], "REVALIDATE_STOCK_VARIANT"),
 }
 
 RESTOCK_PLAN = ["CHECK_STOCK", "PRODUCE_ITEM", "CoordinatorAI"]
 RESTOCK_PROCUREMENT_PLAN = ["PROCURE_ITEM", "CoordinatorAI"]
+
+# Circuit Breaker & Retry State Tracker
+_CIRCUIT_BREAKER_FAILURES = {}
+_MAX_FAILURES_THRESHOLD = 3
 
 def run(state: AgentState) -> dict:
     start_time = time.time()
     
     wf_state = state.get("workflow_state", WorkflowStatus.START)
     event = state.get("workflow_event", WorkflowEvent.UNKNOWN)
-    transaction = state.get("transaction_context", {})
+    transaction = state.get("transaction_context", {}).copy()
     exec_plan = state.get("execution_plan", [])
+    trace_id = state.get("trace_context", {}).get("trace_id", "N/A")
     
     decision_log = "NO_CHANGE"
     tx_status = transaction.get("status")
@@ -44,7 +50,15 @@ def run(state: AgentState) -> dict:
         tx_status = None
         state["transaction_context"] = transaction
 
-    # 1. Timeout Checking
+    # 1. Rollback & Circuit Breaker Checking
+    if event == WorkflowEvent.ROLLBACK or tx_status == "FAILED":
+        decision_log = "TRIGGER_ROLLBACK"
+        wf_state = WorkflowStatus.FAILED
+        transaction["status"] = "FAILED"
+        exec_plan = ["CoordinatorAI"]
+        EventBus.publish("ROLLBACK_EVENT", {"tx_id": transaction.get("transaction_id")}, trace_id=trace_id)
+
+    # 2. Timeout Checking
     last_updated = transaction.get("updated_at", 0)
     if tx_status not in [None, "COMPLETED", "CANCELLED", "FAILED"] and (start_time - last_updated > config.WORKFLOW_TIMEOUT):
         event = WorkflowEvent.TIMEOUT
@@ -80,7 +94,7 @@ def run(state: AgentState) -> dict:
                 exec_plan = ["CoordinatorAI"]
                 decision_log = "RESTOCK_COLLECTING_INFO"
         else:
-        # 2. State Transition Lookup
+        # 3. State Transition Lookup
             transition = TRANSITIONS.get((tx_status, event))
             if transition:
                 next_tx_status, next_wf_state, next_exec_plan, decision = transition
@@ -117,6 +131,13 @@ def run(state: AgentState) -> dict:
                 exec_plan = next_exec_plan
                 decision_log = decision
                 transaction["updated_at"] = start_time
+
+    # Publish EventBus Event
+    EventBus.publish("WORKFLOW_STATE_CHANGED", {
+        "wf_state": str(wf_state),
+        "tx_status": str(transaction.get("status")),
+        "decision": decision_log
+    }, trace_id=trace_id)
 
     latency = (time.time() - start_time) * 1000
     

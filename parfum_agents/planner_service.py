@@ -5,6 +5,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from parfum_agents.tools.utils import generate_transaction_id
 from parfum_agents.models import AgentState
+from parfum_agents.planner_cache import PlannerCache
 
 # Pemetaan deterministik: goal → service operation
 GOAL_TO_OPERATIONS = {
@@ -33,6 +34,7 @@ def run(state: AgentState) -> dict:
     execution_plan = []
     planner_status = "READY"
     transaction    = state.get("transaction_context", {}).copy()
+    cache_hit      = False
 
     # ── Determine pending_slot (next missing slot in priority order) ──────
     pending_slot = ""
@@ -42,41 +44,51 @@ def run(state: AgentState) -> dict:
                 pending_slot = slot
                 break
 
-    # ── Execution routing ─────────────────────────────────────────────────
-    if confidence < 0.6:
-        planner_status = "CLARIFICATION_REQUIRED"
-        execution_plan = ["CoordinatorAI"]
-    elif goal in ["PURCHASE", "RESTOCK"] and ambiguities:
-        planner_status = "CLARIFICATION_REQUIRED"
-        execution_plan = ["CoordinatorAI"]
-    elif goal in ["UNKNOWN", "GREETING", "CONFIRM", "REJECT", "GRATITUDE", "HELP", "RECOMMENDATION", "CATALOG_CHECK"]:
-        execution_plan = ["CoordinatorAI"]
-        pending_slot   = ""  # clear any stale pending slot on terminal intents
+    # ── Check Planner Cache ────────────────────────────────────────────────
+    cached_plan = PlannerCache.get(goal, strategy, req_ops, ambiguities)
+    if cached_plan and confidence >= 0.6 and not (goal in ["PURCHASE", "RESTOCK"] and ambiguities):
+        execution_plan = cached_plan
+        cache_hit = True
     else:
-        # Check strategy from EventMapper
-        required_agents = event_payload.get("required_agents", [])
-        if strategy == "MULTI_AGENT_PARALLEL" and len(required_agents) > 1:
-            # Map required_agents to operations
-            agent_op_map = {
-                "PricingService": "CHECK_PRICE",
-                "InventoryService": "CHECK_STOCK",
-                "ReportingService": "CHECK_REPORT",
-                "OrderService": "CREATE_ORDER"
-            }
-            parallel_ops = [agent_op_map[ag] for ag in required_agents if ag in agent_op_map]
-            if parallel_ops:
-                execution_plan = [parallel_ops, "CoordinatorAI"]
+        # ── Execution routing ─────────────────────────────────────────────
+        if confidence < 0.6:
+            planner_status = "CLARIFICATION_REQUIRED"
+            execution_plan = ["CoordinatorAI"]
+        elif goal in ["PURCHASE", "RESTOCK"] and ambiguities:
+            planner_status = "CLARIFICATION_REQUIRED"
+            execution_plan = ["CoordinatorAI"]
+        elif goal in ["UNKNOWN", "GREETING", "CONFIRM", "REJECT", "GRATITUDE", "HELP", "RECOMMENDATION", "CATALOG_CHECK"]:
+            execution_plan = ["CoordinatorAI"]
+            pending_slot   = ""  # clear any stale pending slot on terminal intents
+        else:
+            # Check strategy from EventMapper
+            required_agents = event_payload.get("required_agents", [])
+            if strategy == "MULTI_AGENT_PARALLEL" and len(required_agents) > 1:
+                # Map required_agents to operations
+                agent_op_map = {
+                    "PricingService": "CHECK_PRICE",
+                    "InventoryService": "CHECK_STOCK",
+                    "ReportingService": "CHECK_REPORT",
+                    "OrderService": "CREATE_ORDER"
+                }
+                parallel_ops = [agent_op_map[ag] for ag in required_agents if ag in agent_op_map]
+                if parallel_ops:
+                    execution_plan = [parallel_ops, "CoordinatorAI"]
+                else:
+                    execution_plan = GOAL_TO_OPERATIONS.get(goal, ["CoordinatorAI"]).copy()
+            elif req_ops:
+                execution_plan = req_ops.copy()
             else:
                 execution_plan = GOAL_TO_OPERATIONS.get(goal, ["CoordinatorAI"]).copy()
-        elif req_ops:
-            execution_plan = req_ops.copy()
-        else:
-            execution_plan = GOAL_TO_OPERATIONS.get(goal, ["CoordinatorAI"]).copy()
 
-        if not execution_plan:
-            execution_plan = ["CoordinatorAI"]
-        elif isinstance(execution_plan[-1], str) and execution_plan[-1] != "CoordinatorAI":
-            execution_plan.append("CoordinatorAI")
+            if not execution_plan:
+                execution_plan = ["CoordinatorAI"]
+            elif isinstance(execution_plan[-1], str) and execution_plan[-1] != "CoordinatorAI":
+                execution_plan.append("CoordinatorAI")
+
+        # Save to cache if ready and not clarification required
+        if planner_status == "READY":
+            PlannerCache.set(goal, strategy, req_ops, ambiguities, execution_plan)
 
     # ── Update structured conversation context ────────────────────────────
     context = state.get("conversation_context", {})
@@ -107,6 +119,8 @@ def run(state: AgentState) -> dict:
 
     latency = (time.time() - start_time) * 1000
 
+    decision_str = f"{planner_status}:{strategy}{':CACHE_HIT' if cache_hit else ''}"
+
     return {
         "planner_status":     planner_status,
         "execution_plan":     execution_plan,
@@ -116,7 +130,7 @@ def run(state: AgentState) -> dict:
         "_metrics": {
             "agent":      "PlannerService",
             "latency_ms": latency,
-            "decision":   f"{planner_status}:{strategy}",
+            "decision":   decision_str,
             "status":     "OK"
         }
     }

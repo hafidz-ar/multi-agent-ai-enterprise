@@ -568,6 +568,23 @@ def get_agents_metrics():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/events/history")
+def get_event_bus_history(limit: int = 50):
+    try:
+        from parfum_agents.event_bus import EventBus
+        history = EventBus.get_history(limit=limit)
+        return {"status": "success", "total": len(history), "data": history}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/planner/cache")
+def get_planner_cache_stats():
+    try:
+        from parfum_agents.planner_cache import PlannerCache
+        return {"status": "success", "data": {"cache_size": len(PlannerCache._cache)}}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Mount Dashboard Static Files at the root
 # MUST be placed after all /api routes to prevent overriding them
 dashboard_path = BASE_DIR / "dashboard"
