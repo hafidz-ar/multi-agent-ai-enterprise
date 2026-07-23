@@ -384,7 +384,12 @@ _NON_PURCHASE_TRIGGERS = [
     "panduan", "tutorial", "katalog", "daftar parfum", "list parfum", "semua parfum",
     "produk apa saja", "koleksi", "terima kasih", "makasih", "thanks", "thank you",
     "reorder", "restock", "restok", "produksi", "tambah stok", "cek stok", "cek harga",
-    "halo", "hai", "selamat", "hi", "hei", "assalamualaikum"
+    "halo", "hai", "selamat", "hi", "hei", "assalamualaikum",
+    # tambahan baru
+    "nilai inventori", "nilai stok", "stok habis", "perlu restok", "isi ulang",
+    "lihat laporan", "lihat stok", "cek persediaan", "sarankan parfum", "parfum terbaik",
+    "tampilkan katalog", "ada parfum apa", "tolong bantu", "minta bantuan",
+    "supplier", "pemasok", "stok kritis", "hampir habis", "warning stok"
 ]
 
 def _detect_non_purchase_intent(input_text: str) -> bool:
@@ -398,50 +403,112 @@ def _semantic_frame_from_rules(input_text: str, catalog: list):
     goal = None
 
     # ── High-specificity patterns checked FIRST ──────────────────────────
-    if any(w in text for w in ["apakah otomatis", "apakah sistem otomatis", "apakah po otomatis", "otomatis reorder", "otomatis po", "otomatis buat po"]):
+    if any(w in text for w in ["apakah otomatis", "apakah sistem otomatis", "apakah po otomatis",
+                                "otomatis reorder", "otomatis po", "otomatis buat po",
+                                "apakah ada fitur otomatis", "sistem otomatis"]):
         goal = "FAQ_FEATURE"
-    elif any(w in text for w in ["nilai inventori", "nilai stok", "total nilai inventori"]):
+    elif any(w in text for w in ["nilai inventori", "nilai stok", "total nilai inventori",
+                                  "nilai barang", "total aset", "aset toko", "nilai gudang"]):
         goal = "INVENTORY_VALUE_CHECK"
-    elif any(w in text for w in ["status po", "purchase order", "po berjalan"]):
+    elif any(w in text for w in ["status po", "purchase order", "po berjalan",
+                                  "cek po", "po aktif", "po pending", "purchase order aktif",
+                                  "status pemesanan bahan"]):
         goal = "PO_CHECK"
-    elif any(w in text for w in ["supplier", "pemasok"]):
+    elif any(w in text for w in ["supplier", "pemasok", "info supplier", "daftar supplier",
+                                  "siapa suppliernya", "nama pemasok", "cek supplier",
+                                  "kontak supplier", "bahan dari mana"]):
         goal = "SUPPLIER_CHECK"
-    elif any(w in text for w in ["stok di bawah", "hampir habis", "stok menipis", "stok <", "kurang dari 5", "di bawah 5"]):
+    elif any(w in text for w in ["stok di bawah", "hampir habis", "stok menipis", "stok <",
+                                  "kurang dari 5", "di bawah 5", "stok kritis",
+                                  "stok mau habis", "barang mau habis", "perlu reorder",
+                                  "warning stok", "stok rendah", "produk kritis"]):
         goal = "LOW_STOCK_CHECK"
     elif any(w in text for w in ["reorder", "restock", "restok", "produksi", "tambah stok",
-                                "buat stok", "order stok", "pesan stok", "stock masuk",
-                                "stok baru", "supply", "pengiriman", "stock in", "masuk barang", "mencukupi"]):
+                                  "buat stok", "order stok", "pesan stok", "stock masuk",
+                                  "stok baru", "supply", "pengiriman", "stock in", "masuk barang",
+                                  "mencukupi", "stok habis", "kehabisan", "top up stok",
+                                  "isi ulang stok", "perlu restok", "minta produksi",
+                                  "ajukan produksi", "buat batch", "tambahkan stok",
+                                  "perlu tambahan", "isi ulang"]):
         goal = "RESTOCK"
-    elif any(w in text for w in ["piramida notes", "top note", "heart note", "base note", "komposisi notes", "formula"]):
+    elif any(w in text for w in ["piramida notes", "top note", "heart note", "base note",
+                                  "komposisi notes", "formula", "bahan parfum",
+                                  "kandungan parfum", "komposisi parfum", "notes parfum"]):
         goal = "FORMULA_CHECK"
     elif any(w in text for w in ["cek harga", "berapa harga", "harga berapa",
                                   "seberapa mahal", "harga barang", "bandingkan harga",
-                                  "harganya", "perbedaan harga"]):
+                                  "harganya", "perbedaan harga",
+                                  # tambahan baru
+                                  "berapa tarifnya", "info harga", "lihat harga",
+                                  "tunjukkan harga", "harga parfum", "berapa rupiah",
+                                  "daftar harga", "cek tarif", "harga normal",
+                                  "harga per botol", "harga satuan", "berapa harga parfum",
+                                  "harga resmi", "harga terbaru"]):
         goal = "PRICE_CHECK"
     elif any(w in text for w in ["cek stok", "stok ada", "ada stok", "stok berapa",
-                                  "berapa stok", "ketersediaan", "ready", "tersedia",
-                                  "masih ada", "ada gak"]):
+                                  "berapa stok", "banyak stok", "stok nya", "stok parfum",
+                                  "ketersediaan", "masih ada", "ada gak",
+                                  # tambahan baru
+                                  "cek ketersediaan", "ada berapa", "stok gudang",
+                                  "lihat stok", "cek persediaan", "tersisa berapa",
+                                  "produk ready", "ready stock", "berapa sisa",
+                                  "cek inventori", "stok sekarang", "stok saat ini",
+                                  "berapa yang ada", "ada stok gak", "sisa stok"]):
         goal = "STOCK_CHECK"
     elif any(w in text for w in ["laporan", "report", "rekap", "penjualan", "sales",
                                   "omset", "pendapatan", "statistik", "ringkasan", "berapa terjual",
-                                  "top 3", "terlaris", "produk terlaris", "bulan ini vs"]):
+                                  "top 3", "terlaris", "produk terlaris", "bulan ini vs",
+                                  # tambahan baru
+                                  "lihat laporan", "tampilkan laporan", "rekap bulan",
+                                  "data penjualan", "performa penjualan", "revenue",
+                                  "hasil penjualan", "analisis penjualan", "total transaksi",
+                                  "berapa untung", "keuntungan", "profit",
+                                  "produk apa yang laku", "yang paling banyak terjual"]):
         goal = "REPORT_CHECK"
     elif any(w in text for w in ["unisex", "produk unisex", "parfum unisex", "rekomendasi", "recommend", "suggest", "saran",
                                   "cocok untuk", "parfum untuk", "parfum pria",
                                   "parfum wanita", "terjangkau",
                                   "harga yang terjangkau", "yang murah", "paling murah",
-                                  "woody", "floral", "citrus", "oriental", "fresh"]):
+                                  "woody", "floral", "citrus", "oriental", "fresh",
+                                  # tambahan baru
+                                  "sarankan parfum", "parfum apa yang bagus",
+                                  "parfum terbaik", "parfum populer", "yang paling laku",
+                                  "pilihkan parfum", "parfum hits", "parfum trending",
+                                  "mau coba parfum baru", "parfum musim",
+                                  "parfum untuk hadiah", "kado parfum",
+                                  "parfum casual", "parfum formal", "parfum kantor",
+                                  "parfum malam", "parfum sehari-hari"]):
         goal = "RECOMMENDATION"
-    elif any(w in text for w in ["bantuan", "help", "bisa apa", "fitur", "apa saja",
-                                  "apa aja", "cara pakai", "panduan", "tutorial"]):
+    elif any(w in text for w in ["bantuan", "help", "bisa apa", "fitur",
+                                  "cara pakai", "panduan", "tutorial",
+                                  # tambahan baru — lebih spesifik untuk HELP
+                                  "tolong", "minta bantuan", "apa yang bisa", "menu bantuan",
+                                  "fitur apa", "bisa bantu apa", "cara order",
+                                  "bagaimana cara", "gimana cara", "cara beli",
+                                  "cara cek", "cara pesan", "panduan penggunaan",
+                                  "bisa dibantu apa", "tolong bantu saya"]):
         goal = "HELP"
-    elif any(w in text for w in ["terima kasih", "makasih", "thanks", "thank you", "tq", "thx", "trims"]):
+    elif any(w in text for w in ["terima kasih", "makasih", "thanks", "thank you", "tq", "thx", "trims",
+                                  # tambahan baru
+                                  "oke terima kasih", "sudah cukup", "bye",
+                                  "sampai jumpa", "makasi ya", "trims ya",
+                                  "mantap", "keren", "bagus"]):
         goal = "GRATITUDE"
     elif any(w in text for w in ["katalog", "daftar parfum", "list parfum", "semua parfum",
-                                  "produk apa saja", "koleksi"]):
+                                  "produk apa saja", "koleksi",
+                                  # tambahan baru
+                                  "tampilkan katalog", "lihat koleksi",
+                                  "parfum apa yang ada", "ada parfum apa",
+                                  "parfum yang tersedia", "lihat semua produk",
+                                  "apa yang dijual", "ada parfum apa saja",
+                                  "merk apa saja", "brand apa saja"]):
         goal = "CATALOG_CHECK"
     elif any(w in text for w in ["halo", "hai", "selamat", "hi", "hei",
-                                  "assalamualaikum", "pagi", "siang", "sore", "malam"]):
+                                  "assalamualaikum", "pagi", "siang", "sore", "malam",
+                                  # tambahan baru
+                                  "apa kabar", "selamat pagi", "selamat siang",
+                                  "permisi", "ada orang", "hello", "hei guys",
+                                  "selamat datang", "good morning", "good afternoon"]):
         goal = "GREETING"
     elif any(w in text for w in ["tunai", "cash", "transfer", "bca", "qris", "gopay",
                                   "ovo", "mandiri", "shopeepay", "linkaja", "bri",

@@ -179,13 +179,15 @@ def run(state: AgentState) -> dict:
 
     if goal == "UNKNOWN":
         return _respond_directly(start_time,
-            "Mohon maaf, saya tidak mengerti maksud Anda. 😊\n\n"
-            "Saya adalah AI Assistant toko parfum. Saya bisa membantu:\n"
-            "• Pembelian parfum\n"
-            "• Cek harga & stok\n"
-            "• Laporan penjualan\n"
-            "• Restock & reorder\n\n"
-            "Ketik **help** untuk panduan lengkap, atau langsung sampaikan kebutuhan Anda!"
+            "Mohon maaf, saya belum bisa memahami pertanyaan Anda. 😊\n\n"
+            "Saya adalah **Parfum Enterprise AI Assistant**. Berikut yang bisa saya bantu:\n"
+            "🛒 **Beli** — *\"Beli YSL Possimus 50ml 2 botol\"*\n"
+            "💰 **Harga** — *\"Berapa harga Tom Ford 100ml?\"*\n"
+            "📦 **Stok** — *\"Cek stok Gucci Magnam\"*\n"
+            "📊 **Laporan** — *\"Laporan penjualan bulan ini\"*\n"
+            "🔄 **Produksi** — *\"Produksi YSL Possimus 50ml 60 botol\"*\n"
+            "🎯 **Rekomendasi** — *\"Rekomendasikan parfum pria yang woody\"*\n\n"
+            "Ketik **help** untuk panduan, atau coba ulangi pertanyaan Anda!"
         )
 
     if goal == "FAQ_FEATURE":
@@ -230,7 +232,10 @@ def run(state: AgentState) -> dict:
         return _respond_directly(start_time, msg)
 
     if goal == "FORMULA_CHECK":
-        prod = entities.get("product") or context.get("current_product") or "YSL Possimus"
+        prod = entities.get("product") or context.get("current_product")
+        if not prod:
+            msg = "Mohon sebutkan nama produk parfum yang ingin Anda cek formula / piramida notes-nya (misalnya: YSL Possimus atau Tom Ford)."
+            return _respond_directly(start_time, msg)
         repo = CatalogRepository()
         info = repo.find_product_by_name(prod)
         if info:
@@ -248,7 +253,9 @@ def run(state: AgentState) -> dict:
                     f"• **Base Notes**: {r[2]}\n\n"
                     f"**Deskripsi**: {r[3]}"
                 )
-                return _respond_directly(start_time, msg)
+                res = _respond_directly(start_time, msg)
+                res["conversation_context"] = {**context, "current_product": p_name}
+                return res
 
     if goal == "LOW_STOCK_CHECK":
         conn = sqlite3.connect(config.DB_PATH)
@@ -334,7 +341,43 @@ def run(state: AgentState) -> dict:
         )
         return _respond_directly(start_time, msg)
 
-
+    if goal == "PRICE_CHECK":
+        prod = entities.get("product") or context.get("current_product")
+        size = entities.get("size_ml")
+        if prod:
+            repo = CatalogRepository()
+            info = repo.find_product_by_name(prod)
+            if info:
+                p_id, p_name, brand, base_price = info[0], info[1], info[2], info[3]
+                p_50 = int(base_price * 0.65)
+                p_30 = int(base_price * 0.45)
+                p_100 = base_price
+                if size == 50:
+                    p_fmt = f"Rp {p_50:,.0f}".replace(",", ".")
+                    msg = f"Harga **{p_name}** ({brand}) ukuran **50ml** adalah **{p_fmt}**."
+                elif size == 30:
+                    p_fmt = f"Rp {p_30:,.0f}".replace(",", ".")
+                    msg = f"Harga **{p_name}** ({brand}) ukuran **30ml** adalah **{p_fmt}**."
+                elif size == 100:
+                    p_fmt = f"Rp {p_100:,.0f}".replace(",", ".")
+                    msg = f"Harga **{p_name}** ({brand}) ukuran **100ml** adalah **{p_fmt}**."
+                else:
+                    p100_fmt = f"Rp {p_100:,.0f}".replace(",", ".")
+                    p50_fmt  = f"Rp {p_50:,.0f}".replace(",", ".")
+                    msg = (
+                        f"**Informasi Harga — {p_name} ({brand}):**\n\n"
+                        f"• Ukuran 50ml : **{p50_fmt}**\n"
+                        f"• Ukuran 100ml: **{p100_fmt}**"
+                    )
+                res = _respond_directly(start_time, msg)
+                res["conversation_context"] = {**context, "current_product": p_name}
+                return res
+        else:
+            if size:
+                msg = f"Mohon sebutkan nama produk parfum (ukuran {size}ml) yang ingin Anda cek harganya."
+            else:
+                msg = "Mohon sebutkan nama produk parfum yang ingin Anda cek harganya (misalnya: YSL Possimus, Dior, atau Tom Ford)."
+            return _respond_directly(start_time, msg)
 
     if goal == "PURCHASE" and entities.get("product") and entities.get("size_ml") and entities.get("quantity"):
         prod = entities.get("product")
@@ -375,12 +418,35 @@ def run(state: AgentState) -> dict:
                 f"{alts}\n\n"
                 f"🔔 **Opsi Lain**: Apakah Anda ingin mengambil stok ready yang ada ({stk} botol), memilih alternatif di atas, atau mengajukan **Pre-Order / Restock Produksi** untuk {qty} botol?"
             )
-        return _respond_directly(start_time, msg)
+        res = _respond_directly(start_time, msg)
+        res["conversation_context"] = {**context, "current_product": p_name}
+        return res
 
     if goal == "STOCK_CHECK":
-        prod = entities.get("product") or context.get("current_product") or "YSL Possimus"
+        prod = entities.get("product") or context.get("current_product")
         size = entities.get("size_ml")
         req_qty = entities.get("quantity") or 1
+
+        if not prod:
+            conn = sqlite3.connect(config.DB_PATH)
+            c = conn.cursor()
+            c.execute("""
+                SELECT p.name, p.brand, i.size_ml, i.quantity_available 
+                FROM inventory i 
+                JOIN perfume_catalog p ON i.perfume_id = p.perfume_id 
+                ORDER BY p.name ASC, i.size_ml ASC
+            """)
+            all_rows = c.fetchall()
+            conn.close()
+            if all_rows:
+                prod_map = {}
+                for r_name, r_brand, r_size, r_qty in all_rows:
+                    prod_map.setdefault(f"{r_name} ({r_brand})", []).append(f"{r_size}ml: **{r_qty} botol**")
+                lines = [f"• **{p}** → " + ", ".join(v) for p, v in prod_map.items()]
+                msg = "📦 **Informasi Stok Seluruh Koleksi Parfum:**\n\n" + "\n".join(lines) + "\n\nSilakan sebutkan nama produk spesifik jika Anda ingin memesan atau mengecek detail lebih lanjut!"
+                return _respond_directly(start_time, msg)
+            else:
+                return _respond_directly(start_time, "Mohon maaf, data stok parfum saat ini sedang tidak tersedia.")
 
         conn = sqlite3.connect(config.DB_PATH)
         c = conn.cursor()
@@ -424,7 +490,9 @@ def run(state: AgentState) -> dict:
                     f"{alts}\n\n"
                     f"🔔 **Opsi**: Apakah Anda ingin mengambil stok ready yang ada ({total_stk} botol), memilih produk alternatif di atas, atau mengajukan **Pre-Order / Restock Produksi** untuk {req_qty} botol?"
                 )
-            return _respond_directly(start_time, msg)
+            res = _respond_directly(start_time, msg)
+            res["conversation_context"] = {**context, "current_product": p_name}
+            return res
 
     # Handle REPORT_CHECK: build rich formatted report directly from service data
     if goal == "REPORT_CHECK" and services_results:
@@ -498,11 +566,12 @@ def _handle_clarification(state, user_input, goal, entities, ambiguities, start_
             temperature=0.3
         )
         template = _load_prompt_template("clarification.txt") or "Kamu adalah asisten toko parfum yang profesional."
-
         system_msg = SystemMessage(content=template)
-        human_msg = HumanMessage(content=f"""Pelanggan ingin melakukan pembelian.
+
+        intent_type = "pencarian harga" if goal == "PRICE_CHECK" else ("pengecekan stok" if goal == "STOCK_CHECK" else "pembelian / pertanyaan")
+        human_msg = HumanMessage(content=f"""Pelanggan menanyakan tentang {intent_type}.
 Informasi yang belum lengkap: {', '.join(missing_info)}
-Tanyakan informasi ini kepada pelanggan secara sopan.""")
+Tanyakan informasi ini kepada pelanggan secara sopan dan spesifik tanpa mengasumsikan transaksi pembelian.""")
 
         response   = llm.invoke([system_msg, human_msg])
         final_text = response.content.strip()
