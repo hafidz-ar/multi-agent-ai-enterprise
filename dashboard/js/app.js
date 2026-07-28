@@ -56,9 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchProductionOrders(1);
     fetchAgentMetrics();
     fetchLogs();
+    fetchEvaluatorHistory();
+    setupEvaluatorEvents();
     
     // Auto-refresh timers
     setInterval(fetchLogs, 10000);
+    setInterval(fetchEvaluatorHistory, 10000);
     setInterval(fetchAgentMetrics, 30000);
 });
 
@@ -74,7 +77,8 @@ function setupTabNavigation() {
         'sales-tab': { title: 'Transaksi Penjualan', subtitle: 'Riwayat Transaksi Penjualan Terkini' },
         'procurement-tab': { title: 'Pesanan Pembelian (PO)', subtitle: 'Manajemen Purchase Order (PO) Bahan Baku' },
         'production-tab': { title: 'Pesanan Produksi', subtitle: 'Monitoring Proses Produksi & Batch Resep' },
-        'agents-tab': { title: 'Sistem Multi-Agent AI', subtitle: 'Arsitektur, Latensi, & Metrik Langsung Divisi AI' }
+        'agents-tab': { title: 'Sistem Multi-Agent AI', subtitle: 'Arsitektur, Latensi, & Metrik Langsung Divisi AI' },
+        'evaluator-tab': { title: 'Live Evaluator Model', subtitle: 'Uji & Lihat Riwayat Evaluasi LLM-as-a-Judge' }
     };
 
     navItems.forEach(item => {
@@ -999,4 +1003,66 @@ if (chatInput) {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
+}
+
+// ==========================================
+// Evaluator Model Logic
+// ==========================================
+
+async function fetchEvaluatorHistory() {
+    try {
+        const res = await fetch(`${API_URL}/evaluator/history`);
+        const json = await res.json();
+        
+        const tbody = document.getElementById('evaluator-table-body');
+        if (!tbody) return;
+        
+        if (json.status === 'success') {
+            tbody.innerHTML = '';
+            if (json.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada riwayat evaluasi.</td></tr>';
+                return;
+            }
+            
+            json.data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.question}"><strong>${item.question}</strong></td>
+                    <td style="font-size: 0.85em; color: var(--text-muted);">${item.created_at}</td>
+                    <td><strong>${item.accuracy_score}/10</strong></td>
+                    <td><strong>${item.explainability_score}/10</strong></td>
+                    <td><strong>${item.hallucination_score}/10</strong></td>
+                    <td><strong>${item.efficiency_score}/10</strong></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    } catch (e) {
+        console.error("Error fetching evaluator history:", e);
+    }
+}
+
+function setupEvaluatorEvents() {
+    const clearBtn = document.getElementById('btn-clear-eval-history');
+    
+    if (clearBtn) {
+        clearBtn.addEventListener('click', async () => {
+            if (confirm("Apakah Anda yakin ingin menghapus SEMUA riwayat evaluasi? Tindakan ini tidak bisa dibatalkan.")) {
+                try {
+                    const res = await fetch(`${API_URL}/evaluator/history`, {
+                        method: 'DELETE'
+                    });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        fetchEvaluatorHistory();
+                    } else {
+                        alert("Gagal menghapus riwayat.");
+                    }
+                } catch (e) {
+                    console.error("Error deleting history:", e);
+                    alert("Koneksi gagal saat menghapus riwayat.");
+                }
+            }
+        });
+    }
 }

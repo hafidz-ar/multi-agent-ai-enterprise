@@ -4,7 +4,7 @@ import json
 import time
 import sqlite3
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -18,6 +18,7 @@ sys.path.insert(0, str(BASE_DIR))
 
 import config
 from workflow.graph import run_workflow
+from scripts.evaluator import evaluate_response
 
 app = FastAPI(title="Parfum Enterprise API")
 
@@ -38,9 +39,36 @@ class ChatRequest(BaseModel):
     client_timestamp: str = ""
     dashboard_version: str = ""
 
+class EvalRequest(BaseModel):
+    question: str
+    context: str
+    answer: str
+
 SESSION_LOCKS = {}
 SESSION_LOCK_TIMES = {}
 _MAX_SESSION_AGE = 1800  # 30 minutes
+
+@app.on_event("startup")
+def startup_event():
+    # Initialize evaluator_history table if not exists
+    conn = sqlite3.connect(config.DB_PATH)
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS evaluator_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT,
+            context TEXT,
+            answer TEXT,
+            accuracy_score INTEGER,
+            explainability_score INTEGER,
+            hallucination_score INTEGER,
+            efficiency_score INTEGER,
+            reasoning TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 def _cleanup_old_sessions():
     """Remove session locks older than 30 minutes to prevent memory leak."""
@@ -50,9 +78,34 @@ def _cleanup_old_sessions():
         SESSION_LOCKS.pop(sid, None)
         SESSION_LOCK_TIMES.pop(sid, None)
 
+def run_background_evaluation(question: str, context: str, answer: str, latency_ms: int):
+    try:
+        eval_result = evaluate_response(question, context, answer, latency_ms=latency_ms)
+        conn = sqlite3.connect(config.DB_PATH)
+        c = conn.cursor()
+        c.execute("""
+            INSERT INTO evaluator_history (
+                question, context, answer, accuracy_score, explainability_score, 
+                hallucination_score, efficiency_score, reasoning
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            question, context, answer, 
+            eval_result.get("accuracy_score", 0), 
+            eval_result.get("explainability_score", 0),
+            eval_result.get("hallucination_score", 0), 
+            eval_result.get("efficiency_score", 0),
+            eval_result.get("reasoning", "")
+        ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("Background evaluation failed:", e)
+
 @app.post("/api/chat")
-async def chat_endpoint(req: ChatRequest):
+async def chat_endpoint(req: ChatRequest, background_tasks: BackgroundTasks):
     _cleanup_old_sessions()
+    start_time = time.time()
+    
     if req.session_id not in SESSION_LOCKS:
         SESSION_LOCKS[req.session_id] = asyncio.Lock()
     SESSION_LOCK_TIMES[req.session_id] = time.time()
@@ -63,6 +116,10 @@ async def chat_endpoint(req: ChatRequest):
             trace_id = f"TRC-{uuid.uuid4().hex[:8].upper()}"
             # Menjalankan workflow sinkron di thread terpisah (non-blocking) dengan Trace ID
             response = await asyncio.to_thread(run_workflow, req.message, session_id=req.session_id, trace_id=trace_id)
+            
+            latency_ms = int((time.time() - start_time) * 1000)
+            background_tasks.add_task(run_background_evaluation, req.message, "Riwayat interaksi otomatis dengan chatbot dari pengguna.", response, latency_ms)
+            
             return {"status": "success", "trace_id": trace_id, "response": response}
         except Exception as e:
             traceback.print_exc()
@@ -582,6 +639,81 @@ def get_planner_cache_stats():
     try:
         from parfum_agents.planner_cache import PlannerCache
         return {"status": "success", "data": {"cache_size": len(PlannerCache._cache)}}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/evaluator/run")
+def run_evaluator(req: EvalRequest):
+    try:
+        start_time = time.time()
+        # Simulated latency processing time (evaluator might take some time)
+        # Actually latency should be part of evaluation, we'll pass it if we have it, 
+        # but here we just measure the evaluator latency for the sake of efficiency scoring.
+        eval_result = evaluate_response(req.question, req.context, req.answer, latency_ms=1500)
+        
+        # Save to DB
+        conn = sqlite3.connect(config.DB_PATH)
+        c = conn.cursor()
+        c.execute("""
+            INSERT INTO evaluator_history (
+                question, context, answer, accuracy_score, explainability_score, 
+                hallucination_score, efficiency_score, reasoning
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            req.question, req.context, req.answer, 
+            eval_result.get("accuracy_score", 0), 
+            eval_result.get("explainability_score", 0),
+            eval_result.get("hallucination_score", 0), 
+            eval_result.get("efficiency_score", 0),
+            eval_result.get("reasoning", "")
+        ))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "data": eval_result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/evaluator/history")
+def get_evaluator_history():
+    try:
+        conn = sqlite3.connect(config.DB_PATH)
+        c = conn.cursor()
+        c.execute("""
+            SELECT id, question, context, answer, accuracy_score, explainability_score, 
+                   hallucination_score, efficiency_score, reasoning, created_at
+            FROM evaluator_history
+            ORDER BY created_at DESC
+        """)
+        rows = c.fetchall()
+        conn.close()
+        
+        history = []
+        for r in rows:
+            history.append({
+                "id": r[0],
+                "question": r[1],
+                "context": r[2],
+                "answer": r[3],
+                "accuracy_score": r[4],
+                "explainability_score": r[5],
+                "hallucination_score": r[6],
+                "efficiency_score": r[7],
+                "reasoning": r[8],
+                "created_at": r[9]
+            })
+        return {"status": "success", "data": history}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/evaluator/history")
+def delete_evaluator_history():
+    try:
+        conn = sqlite3.connect(config.DB_PATH)
+        c = conn.cursor()
+        c.execute("DELETE FROM evaluator_history")
+        conn.commit()
+        conn.close()
+        return {"status": "success", "message": "Semua riwayat evaluasi berhasil dihapus"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

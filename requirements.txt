@@ -14,3 +14,7 @@ fastapi
 uvicorn
 python-multipart
 sqlalchemy
+transformers
+peft
+datasets
+accelerate
