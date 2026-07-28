@@ -103,7 +103,7 @@ def run(state: AgentState) -> dict:
     return {
         "services_results": [result.to_dict()],
         "_metrics": {
-            "agent": "PricingAgent",
+            "agent": "PricingService",
             "latency_ms": result.latency_ms,
             "decision": "PRICE_FETCHED" if result.success else "PRICE_ERROR",
             "status": "OK" if result.success else "ERROR",

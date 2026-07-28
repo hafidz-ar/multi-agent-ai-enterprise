@@ -120,7 +120,7 @@ def run(state: AgentState) -> dict:
         "services_results": [res_dict],
         "transaction_context": tx_context,
         "_metrics": {
-            "agent": "InventoryAgent",
+            "agent": "InventoryService",
             "latency_ms": result.latency_ms,
             "decision": "STOCK_CHECKED",
             "status": "OK" if result.success else "WARNING",

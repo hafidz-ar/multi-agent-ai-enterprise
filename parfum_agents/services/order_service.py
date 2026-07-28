@@ -179,7 +179,7 @@ def run(state: AgentState) -> dict:
         "transaction_context": tx_context,
         "workflow_state": "COMPLETED" if result.success else "FAILED",
         "_metrics": {
-            "agent": "OrderAgent",
+            "agent": "OrderService",
             "latency_ms": result.latency_ms,
             "decision": "ORDER_CREATED" if result.success else "ORDER_FAILED",
             "status": "OK" if result.success else "ERROR",
